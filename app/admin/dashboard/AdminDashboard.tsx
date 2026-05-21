@@ -43,20 +43,26 @@ export default function AdminDashboard() {
 
   async function saveProduct() {
     setSaving(true)
-    const res = await fetch('/api/admin/products', {
-      method: 'POST',
-      body: JSON.stringify(newProduct),
-      headers: { 'Content-Type': 'application/json' },
-    })
-    const saved = await res.json()
-    setProducts((prev) => {
-      const i = prev.findIndex((p) => p.id === saved.id)
-      return i >= 0 ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev]
-    })
-    setSaving(false)
-    setNewProduct(BLANK_PRODUCT)
-    setTab('products')
-    window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Product saved!' }))
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        body: JSON.stringify(newProduct),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const saved = await res.json()
+      if (!res.ok) throw new Error(saved.error ?? 'Save failed')
+      setProducts((prev) => {
+        const i = prev.findIndex((p) => p.id === saved.id)
+        return i >= 0 ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev]
+      })
+      setNewProduct(BLANK_PRODUCT)
+      setTab('products')
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Product saved!' }))
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
