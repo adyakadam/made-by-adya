@@ -15,7 +15,12 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   if (!await requireAdmin()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-  const body = await req.json()
-  const product = await adminUpsertProduct(body)
-  return Response.json(product)
+  try {
+    const body = await req.json()
+    const product = await adminUpsertProduct(body)
+    return Response.json(product)
+  } catch (err) {
+    console.error('Save product error:', err)
+    return Response.json({ error: err instanceof Error ? err.message : 'Failed to save product' }, { status: 500 })
+  }
 }
