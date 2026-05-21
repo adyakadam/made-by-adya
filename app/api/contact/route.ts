@@ -6,8 +6,9 @@ export async function POST(req: NextRequest) {
   if (!name || !email || !message) {
     return Response.json({ error: 'Missing fields' }, { status: 400 })
   }
-  if (supabaseAdmin) {
-    try { await supabaseAdmin.from('contact_messages').insert({ name, email, message }).throwOnError() } catch { /* ignore */ }
+  const db = supabaseAdmin()
+  if (db) {
+    try { await db.from('contact_messages').insert({ name, email, message }).throwOnError() } catch { /* ignore */ }
   }
   return Response.json({ ok: true })
 }

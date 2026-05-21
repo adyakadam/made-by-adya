@@ -6,8 +6,9 @@ export async function POST(req: NextRequest) {
   if (!email || !email.includes('@')) {
     return Response.json({ error: 'Invalid email' }, { status: 400 })
   }
-  if (supabaseAdmin) {
-    try { await supabaseAdmin.from('subscribers').upsert({ email }).throwOnError() } catch { /* ignore */ }
+  const db = supabaseAdmin()
+  if (db) {
+    try { await db.from('subscribers').upsert({ email }).throwOnError() } catch { /* ignore */ }
   }
   return Response.json({ ok: true })
 }

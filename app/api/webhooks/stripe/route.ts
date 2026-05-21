@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
-  if (!supabaseAdmin) {
+  const db = supabaseAdmin()
+  if (!db) {
     console.error('supabaseAdmin not configured — cannot save order')
     return
   }
@@ -40,7 +41,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   const orderNumber = `#MBA-${Date.now().toString().slice(-5)}`
 
-  const { error } = await supabaseAdmin.from('orders').insert({
+  const { error } = await db.from('orders').insert({
     stripe_session_id: session.id,
     stripe_payment_intent: session.payment_intent as string | null,
     customer_email: session.customer_email ?? shipping.email,
@@ -60,8 +61,7 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return
   }
 
-  // Decrement stock for each product
   for (const item of items) {
-    await supabaseAdmin.rpc('decrement_stock', { product_id: item.product_id, qty: item.qty })
+    await db.rpc('decrement_stock', { product_id: item.product_id, qty: item.qty })
   }
 }
