@@ -94,8 +94,8 @@ export default function CartClient() {
             {related.map((p) => (
               <div key={p.id} className="related-card" onClick={() => setModal(p)}>
                 <div className="related-img" style={{ background: p.bg_color, position: 'relative', overflow: 'hidden' }}>
-                  {p.image_url
-                    ? <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                  {p.images?.[0]
+                    ? <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
                     : p.emoji}
                 </div>
                 <div className="related-info">

@@ -23,8 +23,15 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const addItem = useCart((s) => s.addItem)
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
+  const [imgIndex, setImgIndex] = useState(0)
 
   if (!product) return null
+
+  const images = product.images ?? []
+  const hasImages = images.length > 0
+
+  function prev() { setImgIndex((i) => (i - 1 + images.length) % images.length) }
+  function next() { setImgIndex((i) => (i + 1) % images.length) }
 
   function handleAdd() {
     if (!selectedSize) { showToast('Please select a size.'); return }
@@ -36,7 +43,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
       qty: 1,
       size: selectedSize,
       color: selectedColor,
-      image_url: product!.image_url ?? null,
+      image_url: images[0] ?? null,
       emoji: product!.emoji,
       bg_color: product!.bg_color,
     })
@@ -49,11 +56,31 @@ export default function QuickViewModal({ product, onClose }: Props) {
   return (
     <div className="modal-overlay open" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
+
+        {/* Image area */}
         <div className="modal-img" style={{ background: product.bg_color, position: 'relative', overflow: 'hidden' }}>
-          {product.image_url
-            ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-            : product.emoji}
+          {hasImages ? (
+            <>
+              <img
+                src={images[imgIndex]}
+                alt={product.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }}
+              />
+              {images.length > 1 && (
+                <>
+                  <button onClick={prev} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>‹</button>
+                  <button onClick={next} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>›</button>
+                  <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6, zIndex: 2 }}>
+                    {images.map((_, i) => (
+                      <button key={i} onClick={() => setImgIndex(i)} style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', cursor: 'pointer', background: i === imgIndex ? 'white' : 'rgba(255,255,255,0.5)', padding: 0 }} />
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          ) : product.emoji}
         </div>
+
         <div className="modal-info">
           <button className="modal-close" onClick={onClose}>✕</button>
           <div className="modal-badge-row">
@@ -75,23 +102,14 @@ export default function QuickViewModal({ product, onClose }: Props) {
           </div>
           <div className="size-row">
             {product.sizes.map((s) => (
-              <button
-                key={s}
-                className={`size-opt${selectedSize === s ? ' selected' : ''}`}
-                onClick={() => setSelectedSize(s)}
-              >{s}</button>
+              <button key={s} className={`size-opt${selectedSize === s ? ' selected' : ''}`} onClick={() => setSelectedSize(s)}>{s}</button>
             ))}
           </div>
 
           <div className="color-label">Yarn / Colour</div>
           <div className="color-row">
             {product.colors.map((c) => (
-              <div
-                key={c}
-                className={`color-swatch${selectedColor === c ? ' selected' : ''}`}
-                style={{ background: c }}
-                onClick={() => setSelectedColor(c)}
-              />
+              <div key={c} className={`color-swatch${selectedColor === c ? ' selected' : ''}`} style={{ background: c }} onClick={() => setSelectedColor(c)} />
             ))}
           </div>
 
@@ -102,11 +120,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
           ) : null}
 
           <div className="modal-actions">
-            <button
-              className="btn-primary"
-              onClick={handleAdd}
-              disabled={product.stock === 0}
-            >
+            <button className="btn-primary" onClick={handleAdd} disabled={product.stock === 0}>
               {product.stock === 0 ? 'Sold Out' : '+ Add to Cart'}
             </button>
           </div>

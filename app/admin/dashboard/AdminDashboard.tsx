@@ -9,7 +9,7 @@ type Tab = 'orders' | 'products' | 'new-product'
 function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
 const BLANK_PRODUCT: Partial<Product> = {
-  name: '', description: '', price: 0, image_url: null, emoji: '🧶', bg_color: '#f2d9d0',
+  name: '', description: '', price: 0, images: [], emoji: '🧶', bg_color: '#f2d9d0',
   category: 'crochet', badge: 'Crochet', is_new: false, is_bestseller: false,
   stock: 1, rating: 5, review_count: 0, sizes: ['XS','S','M','L'], colors: ['#f2d9d0'], active: true,
 }
@@ -145,8 +145,8 @@ export default function AdminDashboard() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 40, height: 52, borderRadius: 8, background: p.bg_color, overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, position: 'relative' }}>
-                          {p.image_url
-                            ? <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                          {p.images?.[0]
+                            ? <img src={p.images[0]} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
                             : p.emoji}
                         </div>
                         <div>
@@ -180,11 +180,20 @@ export default function AdminDashboard() {
             <div className="form-grid">
               <div className="form-group form-group-inline"><label>Name</label><input type="text" value={newProduct.name ?? ''} onChange={(e) => setNewProduct((p) => ({ ...p, name: e.target.value }))} /></div>
               <div className="form-group form-group-inline">
-                <label>Photo URL <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(paste a link to your clothing photo)</span></label>
-                <input type="url" placeholder="https://..." value={newProduct.image_url ?? ''} onChange={(e) => setNewProduct((p) => ({ ...p, image_url: e.target.value || null }))} />
-                {newProduct.image_url && (
-                  <img src={newProduct.image_url} alt="preview" style={{ marginTop: 8, width: 120, height: 160, objectFit: 'cover', borderRadius: 12, border: '2px solid var(--warm-sand)' }} />
-                )}
+                <label>Photos <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(paste image URLs — first photo is the main one)</span></label>
+                {(newProduct.images ?? []).map((url, i) => (
+                  <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+                    <input type="url" placeholder="https://..." value={url} style={{ flex: 1 }}
+                      onChange={(e) => setNewProduct((p) => ({ ...p, images: (p.images ?? []).map((u, j) => j === i ? e.target.value : u) }))} />
+                    {url && <img src={url} alt="" style={{ width: 40, height: 52, objectFit: 'cover', borderRadius: 6, border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />}
+                    <button type="button" onClick={() => setNewProduct((p) => ({ ...p, images: (p.images ?? []).filter((_, j) => j !== i) }))}
+                      style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 16, flexShrink: 0 }}>✕</button>
+                  </div>
+                ))}
+                <button type="button" className="btn-outline btn-outline-sm" style={{ marginTop: 4 }}
+                  onClick={() => setNewProduct((p) => ({ ...p, images: [...(p.images ?? []), ''] }))}>
+                  + Add Photo
+                </button>
               </div>
               <div className="form-group form-group-inline"><label>Description</label><textarea rows={2} value={newProduct.description ?? ''} onChange={(e) => setNewProduct((p) => ({ ...p, description: e.target.value }))} /></div>
               <div className="form-group"><label>Price (cents, e.g. 6800 = $68)</label><input type="number" value={newProduct.price ?? 0} onChange={(e) => setNewProduct((p) => ({ ...p, price: parseInt(e.target.value) }))} /></div>

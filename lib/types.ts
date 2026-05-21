@@ -3,7 +3,7 @@ export interface Product {
   name: string
   description: string
   price: number // in cents (e.g. 6800 = $68.00)
-  image_url: string | null
+  images: string[]
   emoji: string
   bg_color: string
   category: 'crochet' | 'sewn' | 'sets' | 'accessories'
@@ -26,7 +26,7 @@ export interface CartItem {
   qty: number
   size: string
   color: string
-  image_url: string | null
+  image_url: string | null  // first image, used as thumbnail
   emoji: string
   bg_color: string
 }

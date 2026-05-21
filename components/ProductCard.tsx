@@ -19,9 +19,14 @@ export default function ProductCard({ product, onOpen }: Props) {
   return (
     <div className="product-card" data-id={product.id} onClick={() => onOpen(product)}>
       <div className="product-img" style={{ background: product.bg_color }}>
-        {product.image_url
-          ? <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', position: 'absolute', inset: 0 }} />
+        {product.images?.[0]
+          ? <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', position: 'absolute', inset: 0 }} />
           : product.emoji}
+        {product.images?.length > 1 && (
+          <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.45)', color: 'white', fontSize: 10, borderRadius: 20, padding: '2px 7px', zIndex: 2 }}>
+            1/{product.images.length}
+          </div>
+        )}
         <div className="product-badges">
           <span className={`product-badge ${product.badge.toLowerCase().replace(' ', '-')}`}>{product.badge}</span>
           {product.is_new && <span className="product-badge new">New</span>}

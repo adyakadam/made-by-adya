@@ -9,7 +9,7 @@ create table if not exists products (
   name          text not null,
   description   text,
   price         integer not null,       -- in cents (6800 = $68.00)
-  image_url     text,
+  images        text[] default '{}',
   emoji         text default '🧶',
   bg_color      text default '#f2d9d0',
   category      text not null check (category in ('crochet','sewn','sets','accessories')),
