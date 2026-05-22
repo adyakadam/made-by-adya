@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
 import { getProducts } from '@/lib/supabase'
+
+export const dynamic = 'force-dynamic'
 import { SEED_PRODUCTS } from '@/lib/seed-data'
 import ShopClient from './ShopClient'
 
