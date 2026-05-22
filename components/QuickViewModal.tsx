@@ -60,30 +60,32 @@ export default function QuickViewModal({ product, onClose }: Props) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
 
         {/* Image area */}
-        <div className="modal-img" style={{ background: product.bg_color, position: 'relative', overflow: 'hidden' }}>
-          {hasImages ? (
-            <>
-              {images.map((src, i) => (
-                <img
-                  key={src}
-                  src={src}
-                  alt={product.name}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: i === imgIndex ? 1 : 0, transition: 'opacity 0.2s ease' }}
-                />
-              ))}
-              {images.length > 1 && (
-                <>
-                  <button onClick={prev} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>‹</button>
-                  <button onClick={next} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>›</button>
-                  <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6, zIndex: 2 }}>
-                    {images.map((_, i) => (
-                      <button key={i} onClick={() => setImgIndex(i)} style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', cursor: 'pointer', background: i === imgIndex ? 'white' : 'rgba(255,255,255,0.5)', padding: 0 }} />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          ) : product.emoji}
+        <div className="modal-img" style={{ background: 'white' }}>
+          <div style={{ position: 'relative', width: '100%', height: '100%', borderRadius: 14, overflow: 'hidden', background: product.bg_color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 100 }}>
+            {hasImages ? (
+              <>
+                {images.map((src, i) => (
+                  <img
+                    key={src}
+                    src={src}
+                    alt={product.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: i === imgIndex ? 1 : 0, transition: 'opacity 0.2s ease' }}
+                  />
+                ))}
+                {images.length > 1 && (
+                  <>
+                    <button onClick={prev} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>‹</button>
+                    <button onClick={next} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>›</button>
+                    <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6, zIndex: 2 }}>
+                      {images.map((_, i) => (
+                        <button key={i} onClick={() => setImgIndex(i)} style={{ width: 8, height: 8, borderRadius: '50%', border: 'none', cursor: 'pointer', background: i === imgIndex ? 'white' : 'rgba(255,255,255,0.5)', padding: 0 }} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            ) : product.emoji}
+          </div>
         </div>
 
         <div className="modal-info">
