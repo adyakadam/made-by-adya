@@ -26,7 +26,6 @@ export default function AdminDashboard() {
   const [heroImage, setHeroImage] = useState('')
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
-  const [fetchingOg, setFetchingOg] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
@@ -70,19 +69,6 @@ export default function AdminDashboard() {
     }
   }
 
-  async function fetchOgImage(index: number, linkUrl: string) {
-    if (!linkUrl) return
-    setFetchingOg(index)
-    try {
-      const res = await fetch(`/api/og-image?url=${encodeURIComponent(linkUrl)}`)
-      const data = await res.json()
-      if (data.image_url) {
-        setTiles((prev) => prev.map((t, j) => j === index ? { ...t, image_url: data.image_url } : t))
-      }
-    } catch { /* ignore */ } finally {
-      setFetchingOg(null)
-    }
-  }
 
   async function saveProduct() {
     setSaving(true)
@@ -299,8 +285,11 @@ export default function AdminDashboard() {
 
             {/* Instagram grid */}
             <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Instagram Grid</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 16 }}>
-              Paste an Instagram post link — hit "Get Photo" to auto-load the post image. Or paste any photo URL directly.
+            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 4 }}>
+              For each tile: paste the Instagram post link, and separately paste the photo URL.
+            </p>
+            <p style={{ fontSize: 12, color: 'var(--accent)', marginBottom: 16, background: 'var(--blush)', padding: '10px 14px', borderRadius: 8 }}>
+              💡 To get a photo URL from Instagram: open the post on desktop, right-click the photo → "Copy image address". Paste that URL in the Photo URL field.
             </p>
             {tiles.map((tile, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16, padding: 16, background: 'var(--blush)', borderRadius: 12 }}>
@@ -312,22 +301,11 @@ export default function AdminDashboard() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label style={{ fontSize: 12 }}>Instagram Post Link</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input type="url" placeholder="https://instagram.com/p/..." value={tile.link_url} style={{ flex: 1 }}
-                        onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, link_url: e.target.value } : t))} />
-                      <button
-                        type="button"
-                        className="btn-outline btn-outline-sm"
-                        disabled={!tile.link_url || fetchingOg === i}
-                        onClick={() => fetchOgImage(i, tile.link_url)}
-                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                      >
-                        {fetchingOg === i ? '…' : 'Get Photo'}
-                      </button>
-                    </div>
+                    <input type="url" placeholder="https://instagram.com/p/..." value={tile.link_url}
+                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, link_url: e.target.value } : t))} />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Photo URL <span style={{ fontWeight: 400, color: 'var(--text-light)' }}>(auto-filled by Get Photo, or paste directly)</span></label>
+                    <label style={{ fontSize: 12 }}>Photo URL</label>
                     <input type="url" placeholder="https://..." value={tile.image_url}
                       onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, image_url: e.target.value } : t))} />
                   </div>

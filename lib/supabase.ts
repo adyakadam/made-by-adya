@@ -120,7 +120,8 @@ export async function adminUpdateOrderStatus(id: string, status: Order['status']
 
 export async function getInstagramTiles(): Promise<InstagramTile[]> {
   try {
-    const { data } = await getSupabase().from('settings').select('value').eq('key', 'instagram_tiles').single()
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'instagram_tiles').single()
     return (data?.value as InstagramTile[]) ?? []
   } catch { return [] }
 }
@@ -133,7 +134,8 @@ export async function saveInstagramTiles(tiles: InstagramTile[]): Promise<void> 
 
 export async function getHeroImageUrl(): Promise<string> {
   try {
-    const { data } = await getSupabase().from('settings').select('value').eq('key', 'hero_image_url').single()
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'hero_image_url').single()
     return (data?.value as string) ?? ''
   } catch { return '' }
 }
