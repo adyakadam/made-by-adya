@@ -1,19 +1,28 @@
 import Link from 'next/link'
 import ReviewCard from '@/components/ReviewCard'
 import { SEED_REVIEWS } from '@/lib/seed-data'
+import { getInstagramTiles } from '@/lib/supabase'
 import NewsletterForm from '@/components/NewsletterForm'
 
-const INSTA = [
-  { emoji: '🌸', color: '#f2d9d0' },
-  { emoji: '🧶', color: '#c8d8c0' },
-  { emoji: '☁️', color: '#dcd3e8' },
-  { emoji: '🌿', color: '#e8ddd0' },
-  { emoji: '🎀', color: '#e8c4bc' },
-  { emoji: '🪡', color: '#f2d9d0' },
+export const dynamic = 'force-dynamic'
+
+const FALLBACK_TILES = [
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#f2d9d0', emoji: '🌸' },
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#c8d8c0', emoji: '🧶' },
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#dcd3e8', emoji: '☁️' },
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#e8ddd0', emoji: '🌿' },
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#e8c4bc', emoji: '🎀' },
+  { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#f2d9d0', emoji: '🪡' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
   const reviews = SEED_REVIEWS.slice(0, 3)
+  const savedTiles = await getInstagramTiles()
+
+  const tiles = FALLBACK_TILES.map((fallback, i) => ({
+    ...fallback,
+    ...(savedTiles[i] ?? {}),
+  }))
 
   return (
     <>
@@ -55,16 +64,25 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* INSTAGRAM */}
+      {/* INSTAGRAM GRID */}
       <div className="insta-strip">
         <h3>@madebyadya</h3>
         <p>Follow for behind-the-scenes &amp; batch drop announcements — that's where I announce every new release</p>
         <div className="insta-grid">
-          {INSTA.map((tile, i) => (
-            <div key={i} className="insta-tile" style={{ background: tile.color }}>
-              {tile.emoji}
+          {tiles.map((tile, i) => (
+            <a
+              key={i}
+              href={tile.link_url || 'https://instagram.com/madebyadya'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="insta-tile"
+              style={{ background: tile.color, position: 'relative', overflow: 'hidden', display: 'block' }}
+            >
+              {tile.image_url
+                ? <img src={tile.image_url} alt={`@madebyadya post ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                : tile.emoji}
               <div className="insta-overlay">@madebyadya</div>
-            </div>
+            </a>
           ))}
         </div>
       </div>

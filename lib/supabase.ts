@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import type { Product, Order, Review, CustomOrderRequest } from './types'
+import type { Product, Order, Review, CustomOrderRequest, InstagramTile } from './types'
 
 // Clients are created lazily on first use so module evaluation never throws,
 // even when env vars are missing at build time.
@@ -116,6 +116,19 @@ export async function adminUpdateOrderStatus(id: string, status: Order['status']
   if (trackingNumber) update.tracking_number = trackingNumber
   const { error } = await db.from('orders').update(update).eq('id', id)
   if (error) throw error
+}
+
+export async function getInstagramTiles(): Promise<InstagramTile[]> {
+  try {
+    const { data } = await getSupabase().from('settings').select('value').eq('key', 'instagram_tiles').single()
+    return (data?.value as InstagramTile[]) ?? []
+  } catch { return [] }
+}
+
+export async function saveInstagramTiles(tiles: InstagramTile[]): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  await db.from('settings').upsert({ key: 'instagram_tiles', value: tiles })
 }
 
 export async function adminGetCustomOrders(): Promise<CustomOrderRequest[]> {

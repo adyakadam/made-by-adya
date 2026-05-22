@@ -79,6 +79,12 @@ create table if not exists custom_orders (
   created_at   timestamptz default now()
 );
 
+-- Site Settings (key/value store for editable home grid etc.) ────────────────
+create table if not exists settings (
+  key   text primary key,
+  value jsonb
+);
+
 -- Contact Messages ─────────────────────────────────────────────────────────────
 create table if not exists contact_messages (
   id         uuid primary key default gen_random_uuid(),

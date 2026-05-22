@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Order, Product } from '@/lib/types'
+import type { Order, Product, InstagramTile } from '@/lib/types'
 
-type Tab = 'orders' | 'products' | 'new-product'
+type Tab = 'orders' | 'products' | 'new-product' | 'home-grid'
+
+const BLANK_TILE: InstagramTile = { image_url: '', link_url: '' }
 
 function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
@@ -20,11 +22,18 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState<Order[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [newProduct, setNewProduct] = useState<Partial<Product>>(BLANK_PRODUCT)
+  const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [saving, setSaving] = useState(false)
+  const [savingGrid, setSavingGrid] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
     fetch('/api/admin/products').then((r) => r.json()).then(setProducts).catch(() => null)
+    fetch('/api/admin/settings').then((r) => r.json()).then((d) => {
+      if (d.instagram_tiles?.length) {
+        setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
+      }
+    }).catch(() => null)
   }, [])
 
   async function logout() {
@@ -39,6 +48,23 @@ export default function AdminDashboard() {
       headers: { 'Content-Type': 'application/json' },
     })
     setOrders((prev) => prev.map((o) => o.id === id ? { ...o, status: status as Order['status'], tracking_number: tracking ?? o.tracking_number } : o))
+  }
+
+  async function saveGrid() {
+    setSavingGrid(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instagram_tiles: tiles }),
+      })
+      if (!res.ok) throw new Error('Failed to save')
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home grid saved!' }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Error saving grid.' }))
+    } finally {
+      setSavingGrid(false)
+    }
   }
 
   async function saveProduct() {
@@ -69,9 +95,9 @@ export default function AdminDashboard() {
     <div className="admin-layout">
       <div className="admin-sidebar">
         <h2>made by <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>adya</span></h2>
-        {(['orders', 'products', 'new-product'] as Tab[]).map((t) => (
+        {(['orders', 'products', 'new-product', 'home-grid'] as Tab[]).map((t) => (
           <button key={t} className={`admin-nav-link${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : '➕ New Product'}
+            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : '🏠 Home Grid'}
           </button>
         ))}
         <button className="admin-nav-link" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,.1)' }} onClick={logout}>
@@ -228,6 +254,39 @@ export default function AdminDashboard() {
               <button className="btn-primary" onClick={saveProduct} disabled={saving}>{saving ? 'Saving…' : 'Save Product'}</button>
               <button className="btn-outline btn-outline-sm" onClick={() => { setNewProduct(BLANK_PRODUCT); setTab('products') }}>Cancel</button>
             </div>
+          </div>
+        )}
+        {/* HOME GRID */}
+        {tab === 'home-grid' && (
+          <div className="admin-card">
+            <h2>Home Instagram Grid</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>
+              Set the 6 photos shown on the home page. Paste a photo URL and the Instagram post link for each tile. Leave blank to show the default placeholder.
+            </p>
+            {tiles.map((tile, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16, padding: 16, background: 'var(--blush)', borderRadius: 12 }}>
+                <div style={{ width: 64, height: 80, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, position: 'relative' }}>
+                  {tile.image_url
+                    ? <img src={tile.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                    : (i + 1)}
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>Photo URL</label>
+                    <input type="url" placeholder="https://..." value={tile.image_url}
+                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, image_url: e.target.value } : t))} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label style={{ fontSize: 12 }}>Instagram Post Link</label>
+                    <input type="url" placeholder="https://instagram.com/p/..." value={tile.link_url}
+                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, link_url: e.target.value } : t))} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button className="btn-primary" onClick={saveGrid} disabled={savingGrid}>
+              {savingGrid ? 'Saving…' : 'Save Home Grid'}
+            </button>
           </div>
         )}
       </div>

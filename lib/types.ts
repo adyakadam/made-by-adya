@@ -94,5 +94,10 @@ export interface CustomOrderRequest {
   created_at: string
 }
 
+export interface InstagramTile {
+  image_url: string
+  link_url: string
+}
+
 export type ProductCategory = 'all' | 'crochet' | 'sewn' | 'sets' | 'accessories'
 export type SortOption = 'default' | 'price-asc' | 'price-desc' | 'new' | 'rating'
