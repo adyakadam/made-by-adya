@@ -30,7 +30,7 @@ export default function CartClient({ products }: { products: Product[] }) {
       const res = await fetch(`/api/validate-promo?code=${encodeURIComponent(code)}`)
       const data = await res.json()
       if (data.valid) {
-        applyPromo(code, data.discount, data.label)
+        applyPromo(code, data.discount, data.label, data.product_ids ?? [])
         setPromoInput('')
       } else {
         setPromoError('Invalid or inactive code.')

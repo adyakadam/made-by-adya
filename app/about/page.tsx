@@ -1,10 +1,10 @@
 import Link from 'next/link'
-import { getSiteContent } from '@/lib/supabase'
+import { getSiteContent, getAboutImageUrl } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AboutPage() {
-  const c = await getSiteContent()
+  const [c, aboutImageUrl] = await Promise.all([getSiteContent(), getAboutImageUrl()])
   return (
     <>
       <div className="about-hero">
@@ -14,7 +14,11 @@ export default async function AboutPage() {
           <br />
           <p>{c.about_intro_2}</p>
         </div>
-        <div className="about-right">🪡</div>
+        <div className="about-right" style={{ position: 'relative', overflow: 'hidden' }}>
+          {aboutImageUrl
+            ? <img src={aboutImageUrl} alt="Adya" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', position: 'absolute', inset: 0 }} />
+            : '🪡'}
+        </div>
       </div>
 
       <div className="craft-split">

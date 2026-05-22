@@ -7,5 +7,5 @@ export async function GET(req: NextRequest) {
   const promos = await getPromoCodes()
   const match = promos.find((p) => p.code.toUpperCase() === code && p.active)
   if (!match) return Response.json({ valid: false })
-  return Response.json({ valid: true, discount: match.discount, label: match.label })
+  return Response.json({ valid: true, discount: match.discount, label: match.label, product_ids: match.product_ids ?? [] })
 }

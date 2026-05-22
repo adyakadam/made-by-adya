@@ -150,6 +150,20 @@ export async function saveHeroImageUrl(url: string): Promise<void> {
   await db.from('settings').upsert({ key: 'hero_image_url', value: url })
 }
 
+export async function getAboutImageUrl(): Promise<string> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'about_image_url').single()
+    return (data?.value as string) ?? ''
+  } catch { return '' }
+}
+
+export async function saveAboutImageUrl(url: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  await db.from('settings').upsert({ key: 'about_image_url', value: url })
+}
+
 export async function getSiteContent(): Promise<SiteContent> {
   try {
     const db = getSupabaseAdmin() ?? getSupabase()
@@ -164,10 +178,10 @@ export async function saveSiteContent(content: SiteContent): Promise<void> {
   await db.from('settings').upsert({ key: 'site_content', value: content })
 }
 
-export interface PromoCode { code: string; discount: number; label: string; active: boolean }
+export interface PromoCode { code: string; discount: number; label: string; active: boolean; product_ids: string[] }
 
 const DEFAULT_PROMOS: PromoCode[] = [
-  { code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true },
+  { code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true, product_ids: [] },
 ]
 
 export async function getPromoCodes(): Promise<PromoCode[]> {

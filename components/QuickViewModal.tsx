@@ -119,17 +119,25 @@ export default function QuickViewModal({ product, onClose }: Props) {
           </div>
           <VariantWhisper />
 
-          {product.stock === 0 ? (
-            <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock</div>
-          ) : product.stock <= 3 ? (
-            <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Only {product.stock} left!</div>
-          ) : null}
+          {(() => {
+            const colorQty = selectedColor ? product.color_stock?.[selectedColor] : undefined
+            const qty = colorQty !== undefined ? colorQty : product.stock
+            if (qty === 0) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock{selectedColor ? ' in this colour' : ''}</div>
+            if (qty <= 3) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Only {qty} left{selectedColor ? ' in this colour' : ''}!</div>
+            return null
+          })()}
 
           <div className="modal-actions">
             <HesitationNudge>
-              <button className="btn-primary" onClick={handleAdd} disabled={product.stock === 0}>
-                {product.stock === 0 ? 'Sold Out' : '+ Add to Cart'}
-              </button>
+              {(() => {
+                const colorQty = selectedColor ? product.color_stock?.[selectedColor] : undefined
+                const soldOut = colorQty !== undefined ? colorQty === 0 : product.stock === 0
+                return (
+                  <button className="btn-primary" onClick={handleAdd} disabled={soldOut}>
+                    {soldOut ? 'Sold Out' : '+ Add to Cart'}
+                  </button>
+                )
+              })()}
             </HesitationNudge>
           </div>
         </div>

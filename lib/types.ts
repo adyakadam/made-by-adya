@@ -11,6 +11,7 @@ export interface Product {
   is_new: boolean
   is_bestseller: boolean
   stock: number
+  color_stock?: Record<string, number>
   rating: number
   review_count: number
   sizes: string[]

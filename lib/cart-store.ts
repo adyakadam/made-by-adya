@@ -13,11 +13,12 @@ interface CartStore {
   promoCode: string
   promoDiscount: number  // percentage, e.g. 30
   promoLabel: string
+  promoProductIds: string[]  // empty = all products
   addItem: (item: CartItem) => void
   removeItem: (product_id: string, size: string, color: string) => void
   updateQty: (product_id: string, size: string, color: string, qty: number) => void
   toggleGiftWrap: () => void
-  applyPromo: (code: string, discount: number, label: string) => void
+  applyPromo: (code: string, discount: number, label: string, productIds?: string[]) => void
   removePromo: () => void
   clearCart: () => void
   getCount: () => number
@@ -36,6 +37,7 @@ export const useCart = create<CartStore>()(
       promoCode: '',
       promoDiscount: 0,
       promoLabel: '',
+      promoProductIds: [],
 
       addItem: (incoming) => {
         set((state) => {
@@ -77,10 +79,10 @@ export const useCart = create<CartStore>()(
 
       toggleGiftWrap: () => set((state) => ({ giftWrap: !state.giftWrap })),
 
-      applyPromo: (code, discount, label) => set({ promoCode: code, promoDiscount: discount, promoLabel: label }),
-      removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '' }),
+      applyPromo: (code, discount, label, productIds = []) => set({ promoCode: code, promoDiscount: discount, promoLabel: label, promoProductIds: productIds }),
+      removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [] }),
 
-      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '' }),
+      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [] }),
 
       getCount: () => get().items.reduce((sum, i) => sum + i.qty, 0),
 
@@ -88,9 +90,15 @@ export const useCart = create<CartStore>()(
         get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
 
       getDiscount: () => {
-        const { getMerchandiseSubtotal, promoDiscount } = get()
+        const { items, promoDiscount, promoProductIds } = get()
         if (!promoDiscount) return 0
-        return Math.round(getMerchandiseSubtotal() * (promoDiscount / 100))
+        const eligibleTotal = items.reduce((sum, i) => {
+          if (promoProductIds.length === 0 || promoProductIds.includes(i.product_id)) {
+            return sum + i.price * i.qty
+          }
+          return sum
+        }, 0)
+        return Math.round(eligibleTotal * (promoDiscount / 100))
       },
 
       getSubtotal: () => {

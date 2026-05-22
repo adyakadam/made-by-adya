@@ -16,13 +16,15 @@ export async function POST(req: NextRequest) {
   }
 
   // Validate promo code server-side
-  let discountFactor = 1
+  let promoDiscountPct = 0
+  let promoProductIds: string[] = []
   let validatedPromo = ''
   if (promoCode) {
     const promos = await getPromoCodes()
     const match = promos.find((p) => p.code.toUpperCase() === promoCode.toUpperCase() && p.active)
     if (match) {
-      discountFactor = 1 - match.discount / 100
+      promoDiscountPct = match.discount
+      promoProductIds = match.product_ids ?? []
       validatedPromo = match.code
     }
   }
@@ -30,13 +32,15 @@ export async function POST(req: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
   const lineItems = items.map((item) => {
+    const eligible = validatedPromo && (promoProductIds.length === 0 || promoProductIds.includes(item.product_id))
+    const discountFactor = eligible ? 1 - promoDiscountPct / 100 : 1
     return {
       quantity: item.qty,
       price_data: {
         currency: 'usd',
         unit_amount: Math.round(item.price * discountFactor),
         product_data: {
-          name: `${item.name} (Size: ${item.size})${validatedPromo ? ` — ${validatedPromo} applied` : ''}`,
+          name: `${item.name} (Size: ${item.size})${eligible ? ` — ${validatedPromo} applied` : ''}`,
           description: `Made by Adya — handcrafted piece`,
           metadata: { product_id: item.product_id, size: item.size, color: item.color },
         },

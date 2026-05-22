@@ -135,15 +135,17 @@ export default function AdminDashboard() {
   const [newProduct, setNewProduct] = useState<Partial<Product>>(BLANK_PRODUCT)
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [heroImage, setHeroImage] = useState('')
+  const [aboutImage, setAboutImage] = useState('')
   const [reviews, setReviews] = useState<Review[]>([])
   const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
   const [savingReview, setSavingReview] = useState(false)
   const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT)
   const [contentSection, setContentSection] = useState<ContentSection>('general')
   const [savingContent, setSavingContent] = useState(false)
-  const [promos, setPromos] = useState<PromoCode[]>([{ code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true }])
+  const [promos, setPromos] = useState<PromoCode[]>([{ code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true, product_ids: [] }])
   const [savingPromos, setSavingPromos] = useState(false)
-  const [newPromo, setNewPromo] = useState<PromoCode>({ code: '', discount: 10, label: '', active: true })
+  const [newPromo, setNewPromo] = useState<PromoCode>({ code: '', discount: 10, label: '', active: true, product_ids: [] })
+  const [expandedPromo, setExpandedPromo] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
 
@@ -157,6 +159,7 @@ export default function AdminDashboard() {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
       }
       if (d.hero_image_url) setHeroImage(d.hero_image_url)
+      if (d.about_image_url) setAboutImage(d.about_image_url)
       if (d.site_content) setContent({ ...DEFAULT_CONTENT, ...d.site_content })
     }).catch(() => null)
   }, [])
@@ -181,7 +184,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage }),
+        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage, about_image_url: aboutImage }),
       })
       if (!res.ok) throw new Error('Failed to save')
       window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home page saved!' }))
@@ -437,6 +440,35 @@ export default function AdminDashboard() {
                   onChange={(c) => setNewProduct((p) => ({ ...p, colors: c }))}
                 />
               </div>
+              {(newProduct.colors ?? []).length > 0 && (
+                <div className="form-group form-group-inline">
+                  <label>Stock per Colour <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(leave blank to use the overall stock number)</span></label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {(newProduct.colors ?? []).map((color) => (
+                      <div key={color} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: color, border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />
+                        <span style={{ fontSize: 12, color: 'var(--text-mid)', width: 72 }}>{color}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="—"
+                          value={(newProduct.color_stock ?? {})[color] ?? ''}
+                          style={{ width: 80, fontSize: 13 }}
+                          onChange={(e) => {
+                            const val = e.target.value === '' ? undefined : parseInt(e.target.value)
+                            setNewProduct((p) => {
+                              const cs = { ...(p.color_stock ?? {}) }
+                              if (val === undefined) { delete cs[color] } else { cs[color] = val }
+                              return { ...p, color_stock: cs }
+                            })
+                          }}
+                        />
+                        <span style={{ fontSize: 12, color: 'var(--text-light)' }}>in stock</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={newProduct.is_new ?? false} onChange={(e) => setNewProduct((p) => ({ ...p, is_new: e.target.checked }))} /> New
@@ -526,30 +558,70 @@ export default function AdminDashboard() {
           <div className="admin-card">
             <h2>Promo Codes</h2>
             <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>
-              Codes entered at checkout give the specified % off all items. FAMILY30 is your friends &amp; family code.
+              Codes entered at checkout give the specified % off. Click <strong>Products</strong> on any code to restrict it to specific items — or leave all unchecked to apply to everything.
             </p>
 
             {/* Existing codes */}
             {promos.map((promo, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', background: 'var(--blush)', borderRadius: 12, marginBottom: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 600, fontSize: 15, fontFamily: 'monospace', letterSpacing: '.06em' }}>{promo.code}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{promo.label}</div>
+              <div key={i} style={{ background: 'var(--blush)', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15, fontFamily: 'monospace', letterSpacing: '.06em' }}>{promo.code}</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-light)' }}>
+                      {promo.label}
+                      {promo.product_ids?.length > 0
+                        ? ` · ${promo.product_ids.length} product${promo.product_ids.length !== 1 ? 's' : ''}`
+                        : ' · All products'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="number" min={1} max={100} value={promo.discount} style={{ width: 56, fontSize: 13 }}
+                      onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, discount: parseInt(e.target.value) || 0 } : p))} />
+                    <span style={{ fontSize: 13, color: 'var(--text-mid)' }}>% off</span>
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={promo.active}
+                      onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, active: e.target.checked } : p))} />
+                    Active
+                  </label>
+                  <button onClick={() => setExpandedPromo(expandedPromo === i ? null : i)}
+                    style={{ background: 'none', border: '1.5px solid var(--warm-sand)', borderRadius: 8, padding: '4px 10px', fontSize: 12, cursor: 'pointer', color: 'var(--text-mid)' }}>
+                    {expandedPromo === i ? 'Hide' : 'Products'}
+                  </button>
+                  <button onClick={() => savePromos(promos.map((p, j) => j === i ? { ...p } : p))} disabled={savingPromos}
+                    className="btn-outline btn-outline-sm">Save</button>
+                  <button onClick={() => { const updated = promos.filter((_, j) => j !== i); savePromos(updated) }}
+                    style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <input type="number" min={1} max={100} value={promo.discount} style={{ width: 56, fontSize: 13 }}
-                    onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, discount: parseInt(e.target.value) || 0 } : p))} />
-                  <span style={{ fontSize: 13, color: 'var(--text-mid)' }}>% off</span>
-                </div>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
-                  <input type="checkbox" checked={promo.active}
-                    onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, active: e.target.checked } : p))} />
-                  Active
-                </label>
-                <button onClick={() => savePromos(promos.map((p, j) => j === i ? { ...p } : p))} disabled={savingPromos}
-                  className="btn-outline btn-outline-sm">Save</button>
-                <button onClick={() => { const updated = promos.filter((_, j) => j !== i); savePromos(updated) }}
-                  style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
+                {expandedPromo === i && (
+                  <div style={{ padding: '12px 16px', borderTop: '1px solid var(--warm-sand)', background: 'rgba(255,255,255,0.5)' }}>
+                    <p style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 10 }}>
+                      Select which products this code applies to. Leave all unchecked to apply to every product.
+                    </p>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 8, cursor: 'pointer', fontWeight: 500 }}>
+                      <input type="checkbox"
+                        checked={!promo.product_ids?.length}
+                        onChange={() => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, product_ids: [] } : p))} />
+                      All products
+                    </label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {products.map((product) => (
+                        <label key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                          <input type="checkbox"
+                            checked={promo.product_ids?.includes(product.id) ?? false}
+                            onChange={(e) => setPromos((prev) => prev.map((p, j) => {
+                              if (j !== i) return p
+                              const ids = p.product_ids ?? []
+                              return { ...p, product_ids: e.target.checked ? [...ids, product.id] : ids.filter((id) => id !== product.id) }
+                            }))} />
+                          <span style={{ fontSize: 16 }}>{product.emoji}</span>
+                          {product.name}
+                          <span style={{ fontSize: 12, color: 'var(--text-light)' }}>${(product.price / 100).toFixed(0)}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
@@ -577,10 +649,28 @@ export default function AdminDashboard() {
                   onClick={() => {
                     const updated = [...promos, { ...newPromo, active: true }]
                     savePromos(updated)
-                    setNewPromo({ code: '', discount: 10, label: '', active: true })
+                    setNewPromo({ code: '', discount: 10, label: '', active: true, product_ids: [] })
                   }}>
                   + Add Code
                 </button>
+              </div>
+              <div style={{ marginTop: 14 }}>
+                <p style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 8 }}>Applies to (leave all unchecked for all products):</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {products.map((product) => (
+                    <label key={product.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
+                      <input type="checkbox"
+                        checked={newPromo.product_ids?.includes(product.id) ?? false}
+                        onChange={(e) => setNewPromo((p) => {
+                          const ids = p.product_ids ?? []
+                          return { ...p, product_ids: e.target.checked ? [...ids, product.id] : ids.filter((id) => id !== product.id) }
+                        })} />
+                      <span style={{ fontSize: 16 }}>{product.emoji}</span>
+                      {product.name}
+                      <span style={{ fontSize: 12, color: 'var(--text-light)' }}>${(product.price / 100).toFixed(0)}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -743,6 +833,25 @@ export default function AdminDashboard() {
                 <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
                   <label>Photo URL</label>
                   <input type="url" placeholder="https://..." value={heroImage} onChange={(e) => setHeroImage(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* About page image */}
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>About Page Photo</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 12 }}>
+                The photo shown on the right side of the About page banner.
+              </p>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div style={{ width: 100, height: 120, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, position: 'relative' }}>
+                  {aboutImage
+                    ? <img src={aboutImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                    : '🪡'}
+                </div>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                  <label>Photo URL</label>
+                  <input type="url" placeholder="https://..." value={aboutImage} onChange={(e) => setAboutImage(e.target.value)} />
                 </div>
               </div>
             </div>
