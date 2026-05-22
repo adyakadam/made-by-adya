@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { getInstagramTiles, saveInstagramTiles, getHeroImageUrl, saveHeroImageUrl, getAboutMedia, saveAboutMedia, getCustomPhotos, saveCustomPhotos, getSiteContent, saveSiteContent } from '@/lib/supabase'
-import type { AboutMedia } from '@/lib/supabase'
+import type { AboutMedia, CustomPhoto } from '@/lib/supabase'
 import type { InstagramTile } from '@/lib/types'
 import type { SiteContent } from '@/lib/content'
 
@@ -19,7 +19,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   if (!await requireAdmin()) return Response.json({ error: 'Unauthorized' }, { status: 401 })
   try {
-    const body = await req.json() as { instagram_tiles?: InstagramTile[]; hero_image_url?: string; about_media?: AboutMedia; custom_photos?: string[]; site_content?: SiteContent }
+    const body = await req.json() as { instagram_tiles?: InstagramTile[]; hero_image_url?: string; about_media?: AboutMedia; custom_photos?: CustomPhoto[]; site_content?: SiteContent }
     const saves: Promise<void>[] = []
     if (body.instagram_tiles) saves.push(saveInstagramTiles(body.instagram_tiles))
     if (body.hero_image_url !== undefined) saves.push(saveHeroImageUrl(body.hero_image_url))

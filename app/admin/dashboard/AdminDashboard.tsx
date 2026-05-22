@@ -176,7 +176,7 @@ export default function AdminDashboard() {
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [heroImage, setHeroImage] = useState('')
   const [aboutMedia, setAboutMedia] = useState<{ url: string; isVideo: boolean }>({ url: '', isVideo: false })
-  const [customPhotos, setCustomPhotos] = useState<string[]>(['', '', ''])
+  const [customPhotos, setCustomPhotos] = useState<{ url: string; caption: string }[]>([{ url: '', caption: '' }, { url: '', caption: '' }, { url: '', caption: '' }])
   const [reviews, setReviews] = useState<Review[]>([])
   const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
   const [savingReview, setSavingReview] = useState(false)
@@ -201,7 +201,10 @@ export default function AdminDashboard() {
       }
       if (d.hero_image_url) setHeroImage(d.hero_image_url)
       if (d.about_media) setAboutMedia(d.about_media)
-      if (Array.isArray(d.custom_photos)) setCustomPhotos(d.custom_photos.length === 3 ? d.custom_photos : ['', '', ''].map((_, i) => d.custom_photos[i] ?? ''))
+      if (Array.isArray(d.custom_photos)) {
+        const blank = { url: '', caption: '' }
+        setCustomPhotos([0, 1, 2].map((i) => d.custom_photos[i] ?? blank))
+      }
       if (d.site_content) setContent({ ...DEFAULT_CONTENT, ...d.site_content })
     }).catch(() => null)
   }, [])
@@ -903,20 +906,30 @@ export default function AdminDashboard() {
             <div style={{ marginBottom: 32 }}>
               <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Custom Orders Gallery</h3>
               <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 16 }}>
-                3 photos shown side-by-side on the Custom Orders page. Upload or paste a URL for each.
+                3 small photos at the bottom of the Custom Orders page. Add a caption that appears on hover.
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                {customPhotos.map((url, i) => (
+                {customPhotos.map((photo, i) => (
                   <div key={i} style={{ background: 'var(--blush)', borderRadius: 12, padding: 14 }}>
-                    <div style={{ aspectRatio: '4/5', borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', marginBottom: 10, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-                      {url
-                        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                    <div style={{ height: 140, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', marginBottom: 10, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                      {photo.url
+                        ? <img src={photo.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
                         : `${i + 1}`}
                     </div>
                     <AboutMediaUpload
-                      value={{ url, isVideo: false }}
-                      onChange={(m) => setCustomPhotos((prev) => prev.map((u, j) => j === i ? m.url : u))}
+                      value={{ url: photo.url, isVideo: false }}
+                      onChange={(m) => setCustomPhotos((prev) => prev.map((p, j) => j === i ? { ...p, url: m.url } : p))}
                     />
+                    <div className="form-group" style={{ marginTop: 10, marginBottom: 0 }}>
+                      <label style={{ fontSize: 12 }}>Hover caption</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Custom crochet set in sage green"
+                        value={photo.caption}
+                        onChange={(e) => setCustomPhotos((prev) => prev.map((p, j) => j === i ? { ...p, caption: e.target.value } : p))}
+                        style={{ fontSize: 13 }}
+                      />
+                    </div>
                   </div>
                 ))}
               </div>

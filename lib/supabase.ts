@@ -170,18 +170,32 @@ export async function saveAboutMedia(media: AboutMedia): Promise<void> {
   await db.from('settings').upsert({ key: 'about_image_url', value: media })
 }
 
-export async function getCustomPhotos(): Promise<string[]> {
+export interface CustomPhoto { url: string; caption: string }
+
+const BLANK_PHOTOS: CustomPhoto[] = [
+  { url: '', caption: '' },
+  { url: '', caption: '' },
+  { url: '', caption: '' },
+]
+
+export async function getCustomPhotos(): Promise<CustomPhoto[]> {
   try {
     const db = getSupabaseAdmin() ?? getSupabase()
     const { data } = await db.from('settings').select('value').eq('key', 'custom_photos').single()
-    return (data?.value as string[]) ?? ['', '', '']
-  } catch { return ['', '', ''] }
+    const val = data?.value
+    if (!val) return BLANK_PHOTOS
+    // backwards compat: old data was string[]
+    if (Array.isArray(val) && typeof val[0] === 'string') {
+      return (val as string[]).map((url) => ({ url, caption: '' }))
+    }
+    return val as CustomPhoto[]
+  } catch { return BLANK_PHOTOS }
 }
 
-export async function saveCustomPhotos(urls: string[]): Promise<void> {
+export async function saveCustomPhotos(photos: CustomPhoto[]): Promise<void> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
-  await db.from('settings').upsert({ key: 'custom_photos', value: urls })
+  await db.from('settings').upsert({ key: 'custom_photos', value: photos })
 }
 
 export async function getSiteContent(): Promise<SiteContent> {

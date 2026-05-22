@@ -222,6 +222,14 @@ nav { background: var(--white); border-bottom: 1px solid var(--warm-sand); posit
 .custom-list li { display: flex; align-items: flex-start; gap: 12px; font-size: 14px; color: var(--text-mid); }
 .custom-list li::before { content: '✦'; color: var(--accent); flex-shrink: 0; margin-top: 2px; }
 .custom-form { background: var(--white); border-radius: 20px; padding: 36px; box-shadow: 0 4px 24px rgba(58,46,40,.08); }
+
+.custom-gallery { display: flex; justify-content: center; gap: 20px; padding: 48px; flex-wrap: wrap; border-top: 1px solid var(--warm-sand); }
+.custom-gallery-item { position: relative; width: 160px; height: 200px; border-radius: 14px; overflow: hidden; flex-shrink: 0; }
+.custom-gallery-item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+.custom-gallery-item:hover img { transform: scale(1.05); }
+.custom-gallery-overlay { position: absolute; inset: 0; background: rgba(58,46,40,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; opacity: 0; transition: opacity 0.3s ease; }
+.custom-gallery-item:hover .custom-gallery-overlay { opacity: 1; }
+.custom-gallery-overlay span { color: white; font-size: 13px; font-family: 'DM Sans', sans-serif; text-align: center; line-height: 1.5; letter-spacing: .01em; }
 .custom-form h2 { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 400; margin-bottom: 24px; }
 .waitlist-section { background: var(--lavender); border-radius: 16px; padding: 28px; margin-top: 24px; text-align: center; }
 .waitlist-section h3 { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 400; margin-bottom: 8px; }
