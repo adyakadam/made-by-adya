@@ -111,6 +111,44 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   )
 }
 
+function AboutMediaUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setError('')
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Upload failed')
+      onChange(data.url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div>
+      <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>Upload photo or video</label>
+      <input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" onChange={handleFile} disabled={uploading} style={{ fontSize: 13 }} />
+      {uploading && <p style={{ fontSize: 12, color: 'var(--accent)', marginTop: 6 }}>Uploading…</p>}
+      {error && <p style={{ fontSize: 12, color: '#c0392b', marginTop: 6 }}>{error}</p>}
+      <div style={{ marginTop: 10 }}>
+        <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 4 }}>Or paste a URL</label>
+        <input type="url" placeholder="https://..." value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%', fontSize: 13 }} />
+      </div>
+    </div>
+  )
+}
+
 type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews' | 'content' | 'promos'
 
 const BLANK_REVIEW: Partial<Review> = {
@@ -837,21 +875,22 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* About page image */}
+            {/* About page photo/video */}
             <div style={{ marginBottom: 32 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>About Page Photo</h3>
+              <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>About Page Photo or Video</h3>
               <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 12 }}>
-                The photo shown on the right side of the About page banner.
+                Shown as a circle on the About page. Upload a photo or short video — MP4, MOV, WebM, or any image.
               </p>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                <div style={{ width: 100, height: 120, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, position: 'relative' }}>
+                <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, position: 'relative' }}>
                   {aboutImage
-                    ? <img src={aboutImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                    ? (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(aboutImage)
+                        ? <video src={aboutImage} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                        : <img src={aboutImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />)
                     : '🪡'}
                 </div>
-                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-                  <label>Photo URL</label>
-                  <input type="url" placeholder="https://..." value={aboutImage} onChange={(e) => setAboutImage(e.target.value)} />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <AboutMediaUpload value={aboutImage} onChange={setAboutImage} />
                 </div>
               </div>
             </div>
