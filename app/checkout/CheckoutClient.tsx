@@ -14,7 +14,7 @@ const BLANK_ADDR: ShippingAddress = {
 
 export default function CheckoutClient() {
   const router = useRouter()
-  const { items, giftWrap, getSubtotal, getTax, getTotal } = useCart()
+  const { items, giftWrap, promoCode, getSubtotal, getTax, getTotal } = useCart()
   const [step, setStep] = useState(1)
   const [addr, setAddr] = useState<ShippingAddress>(BLANK_ADDR)
   const [loading, setLoading] = useState(false)
@@ -40,7 +40,7 @@ export default function CheckoutClient() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, shipping: addr, giftWrap }),
+        body: JSON.stringify({ items, shipping: addr, giftWrap, promoCode: promoCode || undefined }),
       })
       const data = await res.json()
       if (data.url) {

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Order, Product, InstagramTile, Review } from '@/lib/types'
 import { type SiteContent, DEFAULT_CONTENT } from '@/lib/content'
+import type { PromoCode } from '@/lib/supabase'
 
 type ContentSection = 'general' | 'home' | 'about' | 'faq' | 'custom' | 'footer'
 
@@ -110,7 +111,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   )
 }
 
-type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews' | 'content'
+type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews' | 'content' | 'promos'
 
 const BLANK_REVIEW: Partial<Review> = {
   reviewer_name: '', avatar_letter: '', rating: 5, body: '', product_name: '',
@@ -140,6 +141,9 @@ export default function AdminDashboard() {
   const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT)
   const [contentSection, setContentSection] = useState<ContentSection>('general')
   const [savingContent, setSavingContent] = useState(false)
+  const [promos, setPromos] = useState<PromoCode[]>([{ code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true }])
+  const [savingPromos, setSavingPromos] = useState(false)
+  const [newPromo, setNewPromo] = useState<PromoCode>({ code: '', discount: 10, label: '', active: true })
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
 
@@ -147,6 +151,7 @@ export default function AdminDashboard() {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
     fetch('/api/admin/products').then((r) => r.json()).then(setProducts).catch(() => null)
     fetch('/api/admin/reviews').then((r) => r.json()).then((d) => { if (Array.isArray(d)) setReviews(d) }).catch(() => null)
+    fetch('/api/admin/promos').then((r) => r.json()).then((d) => { if (Array.isArray(d)) setPromos(d) }).catch(() => null)
     fetch('/api/admin/settings').then((r) => r.json()).then((d) => {
       if (d.instagram_tiles?.length) {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
@@ -187,6 +192,24 @@ export default function AdminDashboard() {
     }
   }
 
+
+  async function savePromos(updated: PromoCode[]) {
+    setSavingPromos(true)
+    try {
+      const res = await fetch('/api/admin/promos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      })
+      if (!res.ok) throw new Error('Failed')
+      setPromos(updated)
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Promo codes saved!' }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Error saving promos.' }))
+    } finally {
+      setSavingPromos(false)
+    }
+  }
 
   async function saveContent() {
     setSavingContent(true)
@@ -265,9 +288,9 @@ export default function AdminDashboard() {
     <div className="admin-layout">
       <div className="admin-sidebar">
         <h2>made by <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>adya</span></h2>
-        {(['orders', 'products', 'new-product', 'reviews', 'content', 'home-grid'] as Tab[]).map((t) => (
+        {(['orders', 'products', 'new-product', 'reviews', 'promos', 'content', 'home-grid'] as Tab[]).map((t) => (
           <button key={t} className={`admin-nav-link${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : t === 'reviews' ? '⭐ Reviews' : t === 'content' ? '✏️ Content' : '🏠 Home Grid'}
+            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : t === 'reviews' ? '⭐ Reviews' : t === 'promos' ? '🎟️ Promos' : t === 'content' ? '✏️ Content' : '🏠 Home Grid'}
           </button>
         ))}
         <button className="admin-nav-link" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,.1)' }} onClick={logout}>
@@ -495,6 +518,71 @@ export default function AdminDashboard() {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* PROMOS */}
+        {tab === 'promos' && (
+          <div className="admin-card">
+            <h2>Promo Codes</h2>
+            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>
+              Codes entered at checkout give the specified % off all items. FAMILY30 is your friends &amp; family code.
+            </p>
+
+            {/* Existing codes */}
+            {promos.map((promo, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '12px 16px', background: 'var(--blush)', borderRadius: 12, marginBottom: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15, fontFamily: 'monospace', letterSpacing: '.06em' }}>{promo.code}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-light)' }}>{promo.label}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input type="number" min={1} max={100} value={promo.discount} style={{ width: 56, fontSize: 13 }}
+                    onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, discount: parseInt(e.target.value) || 0 } : p))} />
+                  <span style={{ fontSize: 13, color: 'var(--text-mid)' }}>% off</span>
+                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={promo.active}
+                    onChange={(e) => setPromos((prev) => prev.map((p, j) => j === i ? { ...p, active: e.target.checked } : p))} />
+                  Active
+                </label>
+                <button onClick={() => savePromos(promos.map((p, j) => j === i ? { ...p } : p))} disabled={savingPromos}
+                  className="btn-outline btn-outline-sm">Save</button>
+                <button onClick={() => { const updated = promos.filter((_, j) => j !== i); savePromos(updated) }}
+                  style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>✕</button>
+              </div>
+            ))}
+
+            {/* Add new code */}
+            <div style={{ marginTop: 24, padding: 16, background: 'var(--cream)', borderRadius: 12, border: '1.5px dashed var(--warm-sand)' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 500, marginBottom: 12 }}>Add New Code</h3>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Code</label>
+                  <input placeholder="SUMMER20" value={newPromo.code} style={{ width: 140, fontFamily: 'monospace', textTransform: 'uppercase' }}
+                    onChange={(e) => setNewPromo((p) => ({ ...p, code: e.target.value.toUpperCase() }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Label</label>
+                  <input placeholder="Summer Sale" value={newPromo.label} style={{ width: 160 }}
+                    onChange={(e) => setNewPromo((p) => ({ ...p, label: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label style={{ fontSize: 12 }}>Discount %</label>
+                  <input type="number" min={1} max={100} value={newPromo.discount} style={{ width: 70 }}
+                    onChange={(e) => setNewPromo((p) => ({ ...p, discount: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <button className="btn-primary"
+                  disabled={!newPromo.code || !newPromo.label || savingPromos}
+                  onClick={() => {
+                    const updated = [...promos, { ...newPromo, active: true }]
+                    savePromos(updated)
+                    setNewPromo({ code: '', discount: 10, label: '', active: true })
+                  }}>
+                  + Add Code
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

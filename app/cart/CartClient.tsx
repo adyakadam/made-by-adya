@@ -9,12 +9,38 @@ import type { Product } from '@/lib/types'
 function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
 export default function CartClient({ products }: { products: Product[] }) {
-  const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getTax, getTotal } = useCart()
+  const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getTax, getTotal,
+    getMerchandiseSubtotal, getDiscount, promoCode, promoDiscount, promoLabel, applyPromo, removePromo } = useCart()
   const [modal, setModal] = useState<Product | null>(null)
+  const [promoInput, setPromoInput] = useState('')
+  const [promoError, setPromoError] = useState('')
+  const [checkingPromo, setCheckingPromo] = useState(false)
 
-  const subtotalBase = items.reduce((s, i) => s + i.price * i.qty, 0)
+  const merchandiseSubtotal = getMerchandiseSubtotal()
+  const discount = getDiscount()
   const tax = getTax()
   const total = getTotal()
+
+  async function handleApplyPromo() {
+    const code = promoInput.trim().toUpperCase()
+    if (!code) return
+    setCheckingPromo(true)
+    setPromoError('')
+    try {
+      const res = await fetch(`/api/validate-promo?code=${encodeURIComponent(code)}`)
+      const data = await res.json()
+      if (data.valid) {
+        applyPromo(code, data.discount, data.label)
+        setPromoInput('')
+      } else {
+        setPromoError('Invalid or inactive code.')
+      }
+    } catch {
+      setPromoError('Could not check code. Try again.')
+    } finally {
+      setCheckingPromo(false)
+    }
+  }
 
   const related = products.filter((p) => p.active && !items.find((i) => i.product_id === p.id)).slice(0, 4)
 
@@ -64,10 +90,41 @@ export default function CartClient({ products }: { products: Product[] }) {
         {/* Summary */}
         <div className="order-summary">
           <h3 className="summary-title">Order Summary</h3>
-          <div className="summary-row"><span>Subtotal</span><span>{fmt(subtotalBase)}</span></div>
+          <div className="summary-row"><span>Subtotal</span><span>{fmt(merchandiseSubtotal)}</span></div>
+          {discount > 0 && (
+            <div className="summary-row" style={{ color: '#27ae60' }}>
+              <span>{promoLabel} ({promoDiscount}% off)</span>
+              <span>−{fmt(discount)}</span>
+            </div>
+          )}
           <div className="summary-row"><span>Shipping</span><span style={{ color: 'var(--text-light)', fontSize: 13 }}>Calculated at checkout</span></div>
           <div className="summary-row"><span>Tax (8%)</span><span>{fmt(tax)}</span></div>
           <div className="summary-row total"><span>Total</span><span>{fmt(total)}</span></div>
+
+          {/* Promo code */}
+          {promoCode ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eafaf1', border: '1.5px solid #27ae60', borderRadius: 10, padding: '8px 14px', marginBottom: 12, fontSize: 13 }}>
+              <span style={{ color: '#27ae60', fontWeight: 500 }}>✓ {promoCode} applied</span>
+              <button onClick={removePromo} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13 }}>Remove</button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  placeholder="Promo code"
+                  value={promoInput}
+                  onChange={(e) => { setPromoInput(e.target.value); setPromoError('') }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleApplyPromo()}
+                  style={{ flex: 1, fontSize: 13, padding: '8px 12px', borderRadius: 10, border: '1.5px solid var(--warm-sand)', fontFamily: 'DM Sans, sans-serif' }}
+                />
+                <button onClick={handleApplyPromo} disabled={checkingPromo || !promoInput.trim()} className="btn-outline btn-outline-sm" style={{ whiteSpace: 'nowrap' }}>
+                  {checkingPromo ? '…' : 'Apply'}
+                </button>
+              </div>
+              {promoError && <p style={{ color: '#c0392b', fontSize: 12, marginTop: 4 }}>{promoError}</p>}
+            </div>
+          )}
 
           <label className="gift-wrap-row">
             <input type="checkbox" checked={giftWrap} onChange={toggleGiftWrap} />

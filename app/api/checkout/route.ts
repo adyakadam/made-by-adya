@@ -1,16 +1,30 @@
 import { NextRequest } from 'next/server'
 import { stripe } from '@/lib/stripe'
+import { getPromoCodes } from '@/lib/supabase'
 import type { CartItem, ShippingAddress } from '@/lib/types'
 
 export async function POST(req: NextRequest) {
-  const { items, shipping, giftWrap } = (await req.json()) as {
+  const { items, shipping, giftWrap, promoCode } = (await req.json()) as {
     items: CartItem[]
     shipping: ShippingAddress
     giftWrap: boolean
+    promoCode?: string
   }
 
   if (!items || items.length === 0) {
     return Response.json({ error: 'Cart is empty' }, { status: 400 })
+  }
+
+  // Validate promo code server-side
+  let discountFactor = 1
+  let validatedPromo = ''
+  if (promoCode) {
+    const promos = await getPromoCodes()
+    const match = promos.find((p) => p.code.toUpperCase() === promoCode.toUpperCase() && p.active)
+    if (match) {
+      discountFactor = 1 - match.discount / 100
+      validatedPromo = match.code
+    }
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -20,9 +34,9 @@ export async function POST(req: NextRequest) {
       quantity: item.qty,
       price_data: {
         currency: 'usd',
-        unit_amount: item.price,
+        unit_amount: Math.round(item.price * discountFactor),
         product_data: {
-          name: `${item.name} (Size: ${item.size})`,
+          name: `${item.name} (Size: ${item.size})${validatedPromo ? ` — ${validatedPromo} applied` : ''}`,
           description: `Made by Adya — handcrafted piece`,
           metadata: { product_id: item.product_id, size: item.size, color: item.color },
         },

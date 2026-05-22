@@ -10,12 +10,19 @@ const GIFT_WRAP_PRICE = 500 // cents
 interface CartStore {
   items: CartItem[]
   giftWrap: boolean
+  promoCode: string
+  promoDiscount: number  // percentage, e.g. 30
+  promoLabel: string
   addItem: (item: CartItem) => void
   removeItem: (product_id: string, size: string, color: string) => void
   updateQty: (product_id: string, size: string, color: string, qty: number) => void
   toggleGiftWrap: () => void
+  applyPromo: (code: string, discount: number, label: string) => void
+  removePromo: () => void
   clearCart: () => void
   getCount: () => number
+  getMerchandiseSubtotal: () => number
+  getDiscount: () => number
   getSubtotal: () => number
   getTax: () => number
   getTotal: () => number
@@ -26,6 +33,9 @@ export const useCart = create<CartStore>()(
     (set, get) => ({
       items: [],
       giftWrap: false,
+      promoCode: '',
+      promoDiscount: 0,
+      promoLabel: '',
 
       addItem: (incoming) => {
         set((state) => {
@@ -67,27 +77,32 @@ export const useCart = create<CartStore>()(
 
       toggleGiftWrap: () => set((state) => ({ giftWrap: !state.giftWrap })),
 
-      clearCart: () => set({ items: [], giftWrap: false }),
+      applyPromo: (code, discount, label) => set({ promoCode: code, promoDiscount: discount, promoLabel: label }),
+      removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '' }),
+
+      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '' }),
 
       getCount: () => get().items.reduce((sum, i) => sum + i.qty, 0),
 
+      getMerchandiseSubtotal: () =>
+        get().items.reduce((sum, i) => sum + i.price * i.qty, 0),
+
+      getDiscount: () => {
+        const { getMerchandiseSubtotal, promoDiscount } = get()
+        if (!promoDiscount) return 0
+        return Math.round(getMerchandiseSubtotal() * (promoDiscount / 100))
+      },
+
       getSubtotal: () => {
-        const { items, giftWrap } = get()
-        let sub = items.reduce((sum, i) => sum + i.price * i.qty, 0)
-        if (giftWrap) sub += GIFT_WRAP_PRICE
-        return sub
+        const { getMerchandiseSubtotal, getDiscount, giftWrap } = get()
+        const discounted = getMerchandiseSubtotal() - getDiscount()
+        return discounted + (giftWrap ? GIFT_WRAP_PRICE : 0)
       },
 
-      getTax: () => {
-        return Math.round(get().getSubtotal() * TAX_RATE)
-      },
+      getTax: () => Math.round(get().getSubtotal() * TAX_RATE),
 
-      getTotal: () => {
-        return get().getSubtotal() + get().getTax()
-      },
+      getTotal: () => get().getSubtotal() + get().getTax(),
     }),
-    {
-      name: 'mba-cart',
-    }
+    { name: 'mba-cart' }
   )
 )

@@ -164,6 +164,26 @@ export async function saveSiteContent(content: SiteContent): Promise<void> {
   await db.from('settings').upsert({ key: 'site_content', value: content })
 }
 
+export interface PromoCode { code: string; discount: number; label: string; active: boolean }
+
+const DEFAULT_PROMOS: PromoCode[] = [
+  { code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true },
+]
+
+export async function getPromoCodes(): Promise<PromoCode[]> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'promo_codes').single()
+    return (data?.value as PromoCode[]) ?? DEFAULT_PROMOS
+  } catch { return DEFAULT_PROMOS }
+}
+
+export async function savePromoCodes(codes: PromoCode[]): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  await db.from('settings').upsert({ key: 'promo_codes', value: codes })
+}
+
 export async function adminGetCustomOrders(): Promise<CustomOrderRequest[]> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
