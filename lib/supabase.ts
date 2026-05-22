@@ -131,6 +131,19 @@ export async function saveInstagramTiles(tiles: InstagramTile[]): Promise<void> 
   await db.from('settings').upsert({ key: 'instagram_tiles', value: tiles })
 }
 
+export async function getHeroImageUrl(): Promise<string> {
+  try {
+    const { data } = await getSupabase().from('settings').select('value').eq('key', 'hero_image_url').single()
+    return (data?.value as string) ?? ''
+  } catch { return '' }
+}
+
+export async function saveHeroImageUrl(url: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  await db.from('settings').upsert({ key: 'hero_image_url', value: url })
+}
+
 export async function adminGetCustomOrders(): Promise<CustomOrderRequest[]> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import ReviewCard from '@/components/ReviewCard'
 import { SEED_REVIEWS } from '@/lib/seed-data'
-import { getInstagramTiles } from '@/lib/supabase'
+import { getInstagramTiles, getHeroImageUrl } from '@/lib/supabase'
 import NewsletterForm from '@/components/NewsletterForm'
 
 export const dynamic = 'force-dynamic'
@@ -17,7 +17,7 @@ const FALLBACK_TILES = [
 
 export default async function HomePage() {
   const reviews = SEED_REVIEWS.slice(0, 3)
-  const savedTiles = await getInstagramTiles()
+  const [savedTiles, heroImageUrl] = await Promise.all([getInstagramTiles(), getHeroImageUrl()])
 
   const tiles = FALLBACK_TILES.map((fallback, i) => ({
     ...fallback,
@@ -29,6 +29,11 @@ export default async function HomePage() {
       {/* HERO */}
       <div className="hero">
         <div className="hero-left">
+          {heroImageUrl
+            ? <img src={heroImageUrl} alt="Made by Adya" />
+            : <div className="hero-left-placeholder">🧶</div>}
+        </div>
+        <div className="hero-right">
           <p className="hero-eyebrow">✦ Crochet &amp; Hand-Sewn — Crafted with love</p>
           <h1 className="hero-title">Wear something <em>made</em> by hand</h1>
           <p className="hero-desc">
@@ -40,20 +45,6 @@ export default async function HomePage() {
             <Link href="/about" className="btn-outline">Our Story</Link>
           </div>
         </div>
-        <div className="hero-right">
-          <div className="hero-illustration">
-            <div className="crochet-motif">🧶</div>
-            <p className="hero-tagline">&ldquo;Every stitch &amp; seam tells a story.&rdquo;</p>
-          </div>
-        </div>
-      </div>
-
-      {/* FEATURES */}
-      <div className="features">
-        <div className="feature-item"><div className="feature-icon">🧶</div><div className="feature-title">Crochet &amp; Hand-Sewn</div><div className="feature-desc">From crocheted textures to sewn fabrics — all made by Adya's hands.</div></div>
-        <div className="feature-item"><div className="feature-icon">🎨</div><div className="feature-title">Colorful &amp; Fun</div><div className="feature-desc">Bright acrylic yarns in every shade — bold, soft, and built to last.</div></div>
-        <div className="feature-item"><div className="feature-icon">✨</div><div className="feature-title">Limited Drops</div><div className="feature-desc">Released in small batches — when they sell out, they're gone.</div></div>
-        <div className="feature-item"><div className="feature-icon">📦</div><div className="feature-title">Ships via USPS</div><div className="feature-desc">Beautifully packaged and shipped right to your door.</div></div>
       </div>
 
       {/* REVIEWS */}

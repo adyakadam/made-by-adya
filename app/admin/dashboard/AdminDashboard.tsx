@@ -23,8 +23,10 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState<Product[]>([])
   const [newProduct, setNewProduct] = useState<Partial<Product>>(BLANK_PRODUCT)
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
+  const [heroImage, setHeroImage] = useState('')
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
+  const [fetchingOg, setFetchingOg] = useState<number | null>(null)
 
   useEffect(() => {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
@@ -33,6 +35,7 @@ export default function AdminDashboard() {
       if (d.instagram_tiles?.length) {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
       }
+      if (d.hero_image_url) setHeroImage(d.hero_image_url)
     }).catch(() => null)
   }, [])
 
@@ -56,14 +59,28 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instagram_tiles: tiles }),
+        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage }),
       })
       if (!res.ok) throw new Error('Failed to save')
-      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home grid saved!' }))
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home page saved!' }))
     } catch {
-      window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Error saving grid.' }))
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Error saving.' }))
     } finally {
       setSavingGrid(false)
+    }
+  }
+
+  async function fetchOgImage(index: number, linkUrl: string) {
+    if (!linkUrl) return
+    setFetchingOg(index)
+    try {
+      const res = await fetch(`/api/og-image?url=${encodeURIComponent(linkUrl)}`)
+      const data = await res.json()
+      if (data.image_url) {
+        setTiles((prev) => prev.map((t, j) => j === index ? { ...t, image_url: data.image_url } : t))
+      }
+    } catch { /* ignore */ } finally {
+      setFetchingOg(null)
     }
   }
 
@@ -259,9 +276,31 @@ export default function AdminDashboard() {
         {/* HOME GRID */}
         {tab === 'home-grid' && (
           <div className="admin-card">
-            <h2>Home Instagram Grid</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 20 }}>
-              Set the 6 photos shown on the home page. Paste a photo URL and the Instagram post link for each tile. Leave blank to show the default placeholder.
+            <h2>Home Page</h2>
+
+            {/* Hero image */}
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Hero Photo</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 12 }}>
+                The big photo on the left side of the home page banner.
+              </p>
+              <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                <div style={{ width: 100, height: 120, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, position: 'relative' }}>
+                  {heroImage
+                    ? <img src={heroImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                    : '🧶'}
+                </div>
+                <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+                  <label>Photo URL</label>
+                  <input type="url" placeholder="https://..." value={heroImage} onChange={(e) => setHeroImage(e.target.value)} />
+                </div>
+              </div>
+            </div>
+
+            {/* Instagram grid */}
+            <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Instagram Grid</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 16 }}>
+              Paste an Instagram post link — hit "Get Photo" to auto-load the post image. Or paste any photo URL directly.
             </p>
             {tiles.map((tile, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 16, padding: 16, background: 'var(--blush)', borderRadius: 12 }}>
@@ -272,20 +311,31 @@ export default function AdminDashboard() {
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Photo URL</label>
-                    <input type="url" placeholder="https://..." value={tile.image_url}
-                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, image_url: e.target.value } : t))} />
+                    <label style={{ fontSize: 12 }}>Instagram Post Link</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <input type="url" placeholder="https://instagram.com/p/..." value={tile.link_url} style={{ flex: 1 }}
+                        onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, link_url: e.target.value } : t))} />
+                      <button
+                        type="button"
+                        className="btn-outline btn-outline-sm"
+                        disabled={!tile.link_url || fetchingOg === i}
+                        onClick={() => fetchOgImage(i, tile.link_url)}
+                        style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+                      >
+                        {fetchingOg === i ? '…' : 'Get Photo'}
+                      </button>
+                    </div>
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label style={{ fontSize: 12 }}>Instagram Post Link</label>
-                    <input type="url" placeholder="https://instagram.com/p/..." value={tile.link_url}
-                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, link_url: e.target.value } : t))} />
+                    <label style={{ fontSize: 12 }}>Photo URL <span style={{ fontWeight: 400, color: 'var(--text-light)' }}>(auto-filled by Get Photo, or paste directly)</span></label>
+                    <input type="url" placeholder="https://..." value={tile.image_url}
+                      onChange={(e) => setTiles((prev) => prev.map((t, j) => j === i ? { ...t, image_url: e.target.value } : t))} />
                   </div>
                 </div>
               </div>
             ))}
             <button className="btn-primary" onClick={saveGrid} disabled={savingGrid}>
-              {savingGrid ? 'Saving…' : 'Save Home Grid'}
+              {savingGrid ? 'Saving…' : 'Save Home Page'}
             </button>
           </div>
         )}
