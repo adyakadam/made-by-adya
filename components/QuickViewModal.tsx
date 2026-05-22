@@ -115,9 +115,24 @@ export default function QuickViewModal({ product, onClose }: Props) {
 
           <div className="color-label">Yarn / Colour</div>
           <div className="color-row">
-            {product.colors.map((c) => (
-              <div key={c} className={`color-swatch${selectedColor === c ? ' selected' : ''}`} style={{ background: c }} onClick={() => setSelectedColor(c)} />
-            ))}
+            {product.colors.map((c) => {
+              const qty = product.color_stock?.[c]
+              const soldOut = qty !== undefined && qty === 0
+              return (
+                <div key={c} className="color-swatch-wrap">
+                  <div
+                    className={`color-swatch${selectedColor === c ? ' selected' : ''}${soldOut ? ' sold-out' : ''}`}
+                    style={{ background: c }}
+                    onClick={() => { if (!soldOut) setSelectedColor(c) }}
+                  />
+                  {qty !== undefined && (
+                    <span className="color-stock-label">
+                      {soldOut ? 'sold out' : `${qty} left`}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
           <VariantWhisper />
 
