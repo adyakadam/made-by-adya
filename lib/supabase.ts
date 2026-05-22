@@ -150,18 +150,24 @@ export async function saveHeroImageUrl(url: string): Promise<void> {
   await db.from('settings').upsert({ key: 'hero_image_url', value: url })
 }
 
-export async function getAboutImageUrl(): Promise<string> {
+export interface AboutMedia { url: string; isVideo: boolean }
+
+export async function getAboutMedia(): Promise<AboutMedia> {
   try {
     const db = getSupabaseAdmin() ?? getSupabase()
     const { data } = await db.from('settings').select('value').eq('key', 'about_image_url').single()
-    return (data?.value as string) ?? ''
-  } catch { return '' }
+    const val = data?.value
+    if (!val) return { url: '', isVideo: false }
+    // backwards-compat: old stored values were plain strings
+    if (typeof val === 'string') return { url: val, isVideo: /\.(mp4|webm|mov|m4v)/i.test(val) }
+    return val as AboutMedia
+  } catch { return { url: '', isVideo: false } }
 }
 
-export async function saveAboutImageUrl(url: string): Promise<void> {
+export async function saveAboutMedia(media: AboutMedia): Promise<void> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
-  await db.from('settings').upsert({ key: 'about_image_url', value: url })
+  await db.from('settings').upsert({ key: 'about_image_url', value: media })
 }
 
 export async function getCustomPhotos(): Promise<string[]> {

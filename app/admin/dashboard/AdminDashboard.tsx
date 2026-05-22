@@ -111,7 +111,9 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   )
 }
 
-function AboutMediaUpload({ value, onChange }: { value: string; onChange: (url: string) => void }) {
+interface MediaValue { url: string; isVideo: boolean }
+
+function AboutMediaUpload({ value, onChange }: { value: MediaValue; onChange: (m: MediaValue) => void }) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
 
@@ -126,7 +128,7 @@ function AboutMediaUpload({ value, onChange }: { value: string; onChange: (url: 
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Upload failed')
-      onChange(data.url)
+      onChange({ url: data.url, isVideo: file.type.startsWith('video/') })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -143,7 +145,7 @@ function AboutMediaUpload({ value, onChange }: { value: string; onChange: (url: 
       {error && <p style={{ fontSize: 12, color: '#c0392b', marginTop: 6 }}>{error}</p>}
       <div style={{ marginTop: 10 }}>
         <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 4 }}>Or paste a URL</label>
-        <input type="url" placeholder="https://..." value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%', fontSize: 13 }} />
+        <input type="url" placeholder="https://..." value={value.url} onChange={(e) => onChange({ url: e.target.value, isVideo: value.isVideo })} style={{ width: '100%', fontSize: 13 }} />
       </div>
     </div>
   )
@@ -173,7 +175,7 @@ export default function AdminDashboard() {
   const [newProduct, setNewProduct] = useState<Partial<Product>>(BLANK_PRODUCT)
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [heroImage, setHeroImage] = useState('')
-  const [aboutImage, setAboutImage] = useState('')
+  const [aboutMedia, setAboutMedia] = useState<{ url: string; isVideo: boolean }>({ url: '', isVideo: false })
   const [customPhotos, setCustomPhotos] = useState<string[]>(['', '', ''])
   const [reviews, setReviews] = useState<Review[]>([])
   const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
@@ -198,7 +200,7 @@ export default function AdminDashboard() {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
       }
       if (d.hero_image_url) setHeroImage(d.hero_image_url)
-      if (d.about_image_url) setAboutImage(d.about_image_url)
+      if (d.about_media) setAboutMedia(d.about_media)
       if (Array.isArray(d.custom_photos)) setCustomPhotos(d.custom_photos.length === 3 ? d.custom_photos : ['', '', ''].map((_, i) => d.custom_photos[i] ?? ''))
       if (d.site_content) setContent({ ...DEFAULT_CONTENT, ...d.site_content })
     }).catch(() => null)
@@ -224,7 +226,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage, about_image_url: aboutImage, custom_photos: customPhotos }),
+        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage, about_media: aboutMedia, custom_photos: customPhotos }),
       })
       if (!res.ok) throw new Error('Failed to save')
       window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home page saved!' }))
@@ -885,14 +887,14 @@ export default function AdminDashboard() {
               </p>
               <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
                 <div style={{ width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', background: 'var(--warm-sand)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, position: 'relative' }}>
-                  {aboutImage
-                    ? (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(aboutImage)
-                        ? <video src={aboutImage} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
-                        : <img src={aboutImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />)
+                  {aboutMedia.url
+                    ? (aboutMedia.isVideo
+                        ? <video src={aboutMedia.url} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                        : <img src={aboutMedia.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />)
                     : '🪡'}
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <AboutMediaUpload value={aboutImage} onChange={setAboutImage} />
+                  <AboutMediaUpload value={aboutMedia} onChange={setAboutMedia} />
                 </div>
               </div>
             </div>
@@ -912,8 +914,8 @@ export default function AdminDashboard() {
                         : `${i + 1}`}
                     </div>
                     <AboutMediaUpload
-                      value={url}
-                      onChange={(newUrl) => setCustomPhotos((prev) => prev.map((u, j) => j === i ? newUrl : u))}
+                      value={{ url, isVideo: false }}
+                      onChange={(m) => setCustomPhotos((prev) => prev.map((u, j) => j === i ? m.url : u))}
                     />
                   </div>
                 ))}
