@@ -14,19 +14,23 @@ export default function AutoPlayVideo({ src, style }: Props) {
     const video = ref.current
     if (!video) return
     video.muted = true
+    video.load()
     video.play().catch(() => null)
   }, [src])
 
   return (
     <video
       ref={ref}
-      src={src}
       autoPlay
       muted
       loop
       playsInline
       preload="auto"
       style={style}
-    />
+    >
+      <source src={src} type="video/mp4" />
+      <source src={src} type="video/webm" />
+      <source src={src} type="video/quicktime" />
+    </video>
   )
 }
