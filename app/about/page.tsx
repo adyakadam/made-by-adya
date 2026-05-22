@@ -14,9 +14,11 @@ export default async function AboutPage() {
           <br />
           <p>{c.about_intro_2}</p>
         </div>
-        <div className="about-right" style={{ position: 'relative', overflow: 'hidden' }}>
+        <div className="about-right">
           {aboutImageUrl
-            ? <img src={aboutImageUrl} alt="Adya" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', position: 'absolute', inset: 0 }} />
+            ? <div style={{ width: 260, height: 260, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}>
+                <img src={aboutImageUrl} alt="Adya" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
             : '🪡'}
         </div>
       </div>
