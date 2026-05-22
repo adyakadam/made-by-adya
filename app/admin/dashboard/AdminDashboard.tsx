@@ -911,7 +911,7 @@ export default function AdminDashboard() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                 {customPhotos.map((photo, i) => (
                   <div key={i} style={{ background: 'var(--blush)', borderRadius: 12, padding: 14 }}>
-                    <div style={{ height: 140, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', marginBottom: 10, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                    <div style={{ height: 175, borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', marginBottom: 10, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
                       {photo.url
                         ? <img src={photo.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
                         : `${i + 1}`}

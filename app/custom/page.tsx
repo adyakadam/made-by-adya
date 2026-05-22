@@ -35,16 +35,19 @@ export default async function CustomPage() {
 
       {photos.length > 0 && (
         <div className="custom-gallery">
-          {photos.map((photo, i) => (
-            <div key={i} className="custom-gallery-item">
-              <img src={photo.url} alt={`Custom order example ${i + 1}`} />
-              {photo.caption && (
-                <div className="custom-gallery-overlay">
-                  <span>{photo.caption}</span>
-                </div>
-              )}
-            </div>
-          ))}
+          <h2>Past Custom Orders</h2>
+          <div className="custom-gallery-row">
+            {photos.map((photo, i) => (
+              <div key={i} className="custom-gallery-item">
+                <img src={photo.url} alt={`Custom order example ${i + 1}`} />
+                {photo.caption && (
+                  <div className="custom-gallery-overlay">
+                    <span>{photo.caption}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </>
