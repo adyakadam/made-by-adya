@@ -174,6 +174,7 @@ export default function AdminDashboard() {
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [heroImage, setHeroImage] = useState('')
   const [aboutImage, setAboutImage] = useState('')
+  const [customPhotos, setCustomPhotos] = useState<string[]>(['', '', ''])
   const [reviews, setReviews] = useState<Review[]>([])
   const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
   const [savingReview, setSavingReview] = useState(false)
@@ -198,6 +199,7 @@ export default function AdminDashboard() {
       }
       if (d.hero_image_url) setHeroImage(d.hero_image_url)
       if (d.about_image_url) setAboutImage(d.about_image_url)
+      if (Array.isArray(d.custom_photos)) setCustomPhotos(d.custom_photos.length === 3 ? d.custom_photos : ['', '', ''].map((_, i) => d.custom_photos[i] ?? ''))
       if (d.site_content) setContent({ ...DEFAULT_CONTENT, ...d.site_content })
     }).catch(() => null)
   }, [])
@@ -222,7 +224,7 @@ export default function AdminDashboard() {
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage, about_image_url: aboutImage }),
+        body: JSON.stringify({ instagram_tiles: tiles, hero_image_url: heroImage, about_image_url: aboutImage, custom_photos: customPhotos }),
       })
       if (!res.ok) throw new Error('Failed to save')
       window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Home page saved!' }))
@@ -892,6 +894,29 @@ export default function AdminDashboard() {
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <AboutMediaUpload value={aboutImage} onChange={setAboutImage} />
                 </div>
+              </div>
+            </div>
+
+            {/* Custom orders photos */}
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 500, marginBottom: 4 }}>Custom Orders Gallery</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 16 }}>
+                3 photos shown side-by-side on the Custom Orders page. Upload or paste a URL for each.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+                {customPhotos.map((url, i) => (
+                  <div key={i} style={{ background: 'var(--blush)', borderRadius: 12, padding: 14 }}>
+                    <div style={{ aspectRatio: '4/5', borderRadius: 10, overflow: 'hidden', background: 'var(--warm-sand)', marginBottom: 10, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                      {url
+                        ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0 }} />
+                        : `${i + 1}`}
+                    </div>
+                    <AboutMediaUpload
+                      value={url}
+                      onChange={(newUrl) => setCustomPhotos((prev) => prev.map((u, j) => j === i ? newUrl : u))}
+                    />
+                  </div>
+                ))}
               </div>
             </div>
 
