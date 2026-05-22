@@ -1,8 +1,111 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Order, Product, InstagramTile, Review } from '@/lib/types'
+
+function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: string[]) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [imgSrc, setImgSrc] = useState<string | null>(null)
+  const [hovered, setHovered] = useState<string | null>(null)
+  const [manualHex, setManualHex] = useState('')
+
+  function loadFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImgSrc(URL.createObjectURL(file))
+  }
+
+  useEffect(() => {
+    if (!imgSrc || !canvasRef.current) return
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const img = new Image()
+    img.onload = () => { canvas.width = img.naturalWidth; canvas.height = img.naturalHeight; ctx.drawImage(img, 0, 0) }
+    img.src = imgSrc
+  }, [imgSrc])
+
+  function pickColor(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width))
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height))
+    const [r, g, b] = ctx.getImageData(x, y, 1, 1).data
+    const hex = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`
+    if (!colors.includes(hex)) onChange([...colors, hex])
+  }
+
+  function previewColor(e: React.MouseEvent<HTMLCanvasElement>) {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    const rect = canvas.getBoundingClientRect()
+    const x = Math.floor((e.clientX - rect.left) * (canvas.width / rect.width))
+    const y = Math.floor((e.clientY - rect.top) * (canvas.height / rect.height))
+    const [r, g, b] = ctx.getImageData(x, y, 1, 1).data
+    setHovered(`#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`)
+  }
+
+  function addManual() {
+    const h = manualHex.startsWith('#') ? manualHex : `#${manualHex}`
+    if (/^#[0-9a-fA-F]{6}$/.test(h) && !colors.includes(h)) { onChange([...colors, h]); setManualHex('') }
+  }
+
+  return (
+    <div>
+      {/* Current swatches */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+        {colors.map((c) => (
+          <div key={c} title={c} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--cream)', borderRadius: 20, padding: '3px 10px 3px 6px', border: '1.5px solid var(--warm-sand)' }}>
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{c}</span>
+            <button onClick={() => onChange(colors.filter((x) => x !== c))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13, lineHeight: 1, marginLeft: 2, padding: 0 }}>✕</button>
+          </div>
+        ))}
+      </div>
+
+      {/* Upload image to pick from */}
+      <div style={{ marginBottom: 10 }}>
+        <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>
+          Upload a photo to pick yarn/fabric colours from it:
+        </label>
+        <input type="file" accept="image/*" onChange={loadFile} style={{ fontSize: 13 }} />
+      </div>
+
+      {imgSrc && (
+        <div style={{ marginBottom: 10 }}>
+          <p style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 6 }}>
+            Click anywhere on the image to add that colour →{' '}
+            {hovered && <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><span style={{ width:12, height:12, borderRadius:'50%', background:hovered, display:'inline-block', border:'1px solid #ccc' }} />{hovered}</span>}
+          </p>
+          <canvas
+            ref={canvasRef}
+            onClick={pickColor}
+            onMouseMove={previewColor}
+            style={{ cursor: 'crosshair', maxWidth: '100%', maxHeight: 240, borderRadius: 10, display: 'block', border: '1.5px solid var(--warm-sand)' }}
+          />
+        </div>
+      )}
+
+      {/* Manual hex fallback */}
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="text" placeholder="#c4907a" value={manualHex}
+          onChange={(e) => setManualHex(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && addManual()}
+          style={{ width: 110, fontSize: 13 }}
+        />
+        {manualHex && <div style={{ width: 20, height: 20, borderRadius: '50%', background: manualHex.startsWith('#') ? manualHex : `#${manualHex}`, border: '1px solid #ccc' }} />}
+        <button type="button" className="btn-outline btn-outline-sm" onClick={addManual}>Add colour</button>
+      </div>
+    </div>
+  )
+}
 
 type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews'
 
@@ -280,7 +383,13 @@ export default function AdminDashboard() {
               </div>
               <div className="form-group"><label>Badge Label</label><input type="text" value={newProduct.badge ?? ''} onChange={(e) => setNewProduct((p) => ({ ...p, badge: e.target.value }))} /></div>
               <div className="form-group"><label>Sizes (comma-separated)</label><input type="text" value={(newProduct.sizes ?? []).join(',')} onChange={(e) => setNewProduct((p) => ({ ...p, sizes: e.target.value.split(',').map((s) => s.trim()) }))} /></div>
-              <div className="form-group"><label>Colors (hex, comma-separated)</label><input type="text" value={(newProduct.colors ?? []).join(',')} onChange={(e) => setNewProduct((p) => ({ ...p, colors: e.target.value.split(',').map((s) => s.trim()) }))} /></div>
+              <div className="form-group form-group-inline">
+                <label>Yarn / Fabric Colours</label>
+                <ColorPicker
+                  colors={newProduct.colors ?? []}
+                  onChange={(c) => setNewProduct((p) => ({ ...p, colors: c }))}
+                />
+              </div>
               <div className="form-group" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                   <input type="checkbox" checked={newProduct.is_new ?? false} onChange={(e) => setNewProduct((p) => ({ ...p, is_new: e.target.checked }))} /> New
