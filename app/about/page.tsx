@@ -15,11 +15,9 @@ export default async function AboutPage() {
           <br />
           <p>{c.about_intro_2}</p>
         </div>
-        <div className="about-right">
+        <div className="about-right" style={{ position: 'relative', overflow: 'hidden', padding: 0 }}>
           {aboutMedia.url
-            ? <div style={{ width: 260, height: 260, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}>
-                <AboutMedia url={aboutMedia.url} />
-              </div>
+            ? <AboutMedia url={aboutMedia.url} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
             : '🪡'}
         </div>
       </div>

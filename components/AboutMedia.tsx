@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 
 const VIDEO_EXTS = /\.(mp4|webm|mov|m4v|ogg)/i
 
-export default function AboutMedia({ url }: { url: string }) {
+export default function AboutMedia({ url, style }: { url: string; style?: React.CSSProperties }) {
   const ref = useRef<HTMLVideoElement>(null)
   const [videoFailed, setVideoFailed] = useState(false)
 
@@ -29,7 +29,7 @@ export default function AboutMedia({ url }: { url: string }) {
         playsInline
         preload="auto"
         onError={() => setVideoFailed(true)}
-        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        style={style ?? { width: '100%', height: '100%', objectFit: 'cover' }}
       >
         <source src={url} type="video/mp4" />
         <source src={url} type="video/webm" />
@@ -42,7 +42,7 @@ export default function AboutMedia({ url }: { url: string }) {
     <img
       src={url}
       alt="Adya"
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      style={style ?? { width: '100%', height: '100%', objectFit: 'cover' }}
     />
   )
 }
