@@ -145,7 +145,7 @@ function AboutMediaUpload({ value, onChange }: { value: MediaValue; onChange: (m
       {error && <p style={{ fontSize: 12, color: '#c0392b', marginTop: 6 }}>{error}</p>}
       <div style={{ marginTop: 10 }}>
         <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 4 }}>Or paste a URL</label>
-        <input type="url" placeholder="https://..." value={value.url} onChange={(e) => onChange({ url: e.target.value, isVideo: value.isVideo })} style={{ width: '100%', fontSize: 13 }} />
+        <input type="url" placeholder="https://..." value={value.url} onChange={(e) => { const url = e.target.value; onChange({ url, isVideo: /\.(mp4|webm|mov|m4v)/i.test(url) }) }} style={{ width: '100%', fontSize: 13 }} />
       </div>
     </div>
   )
