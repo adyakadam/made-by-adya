@@ -8,7 +8,7 @@ interface Props {
   customOrderPath?: string
 }
 
-export default function HesitationNudge({ children, customOrderPath = '/custom-order' }: Props) {
+export default function HesitationNudge({ children, customOrderPath = '/custom' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const desktopTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -30,7 +30,6 @@ export default function HesitationNudge({ children, customOrderPath = '/custom-o
     const isTouchOnly = window.matchMedia('(hover: none) and (pointer: coarse)').matches
 
     if (isTouchOnly) {
-      // Mobile: show after 12s of continuous page visibility without add-to-cart tap
       const start = () => {
         if (dismissed.current) return
         mobileTimer.current = setTimeout(() => {
@@ -40,18 +39,19 @@ export default function HesitationNudge({ children, customOrderPath = '/custom-o
       const pause = () => { if (mobileTimer.current) clearTimeout(mobileTimer.current) }
 
       start()
-      document.addEventListener('visibilitychange', () => {
-        document.hidden ? pause() : start()
-      })
-      return () => { if (mobileTimer.current) clearTimeout(mobileTimer.current) }
+      const onVisibility = () => document.hidden ? pause() : start()
+      document.addEventListener('visibilitychange', onVisibility)
+      return () => {
+        document.removeEventListener('visibilitychange', onVisibility)
+        if (mobileTimer.current) clearTimeout(mobileTimer.current)
+      }
     }
 
-    // Desktop: show after 8s of cursor staying within 80px of the button area
+    // Desktop: show after 8s of cursor staying within 80px of the button
     const handleMouseMove = (e: MouseEvent) => {
       if (dismissed.current || visible) return
       const el = containerRef.current
       if (!el) return
-
       const rect = el.getBoundingClientRect()
       const dx = Math.max(rect.left - e.clientX, 0, e.clientX - rect.right)
       const dy = Math.max(rect.top - e.clientY, 0, e.clientY - rect.bottom)
@@ -78,23 +78,26 @@ export default function HesitationNudge({ children, customOrderPath = '/custom-o
 
   return (
     <div ref={containerRef}>
-      {/* Clicks on the button dismiss the nudge */}
-      <div onClick={dismiss}>
-        {children}
-      </div>
-
+      <div onClick={dismiss}>{children}</div>
       <p
         aria-hidden={!visible}
-        className={[
-          'text-sm text-gray-400 italic mt-2 leading-relaxed',
-          'transition-opacity duration-[400ms]',
-          visible ? 'opacity-100' : 'opacity-0 pointer-events-none select-none',
-        ].join(' ')}
+        style={{
+          fontSize: 12,
+          color: 'var(--text-light)',
+          fontStyle: 'italic',
+          marginTop: 8,
+          lineHeight: 1.6,
+          opacity: visible ? 1 : 0,
+          pointerEvents: visible ? 'auto' : 'none',
+          transition: 'opacity 400ms ease',
+        }}
       >
         Not finding exactly what you want?{' '}
         <Link
           href={customOrderPath}
-          className="text-amber-600/70 hover:text-amber-600 hover:underline transition-colors duration-200"
+          style={{ color: 'var(--accent)', textDecoration: 'none' }}
+          onMouseEnter={(e) => ((e.target as HTMLAnchorElement).style.textDecoration = 'underline')}
+          onMouseLeave={(e) => ((e.target as HTMLAnchorElement).style.textDecoration = 'none')}
         >
           ✦ Request a custom piece instead
         </Link>

@@ -5,6 +5,8 @@ import Link from 'next/link'
 import type { Product } from '@/lib/types'
 import { useCart } from '@/lib/cart-store'
 import { showToast } from './Toast'
+import VariantWhisper from './VariantWhisper'
+import HesitationNudge from './HesitationNudge'
 
 interface Props {
   product: Product | null
@@ -115,6 +117,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
               <div key={c} className={`color-swatch${selectedColor === c ? ' selected' : ''}`} style={{ background: c }} onClick={() => setSelectedColor(c)} />
             ))}
           </div>
+          <VariantWhisper />
 
           {product.stock === 0 ? (
             <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock</div>
@@ -123,9 +126,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
           ) : null}
 
           <div className="modal-actions">
-            <button className="btn-primary" onClick={handleAdd} disabled={product.stock === 0}>
-              {product.stock === 0 ? 'Sold Out' : '+ Add to Cart'}
-            </button>
+            <HesitationNudge>
+              <button className="btn-primary" onClick={handleAdd} disabled={product.stock === 0}>
+                {product.stock === 0 ? 'Sold Out' : '+ Add to Cart'}
+              </button>
+            </HesitationNudge>
           </div>
         </div>
       </div>

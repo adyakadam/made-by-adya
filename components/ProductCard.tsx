@@ -1,10 +1,12 @@
 'use client'
 
 import type { Product } from '@/lib/types'
+import CustomBadge from './CustomBadge'
 
 interface Props {
   product: Product
   onOpen: (product: Product) => void
+  showCustomBadge?: boolean
 }
 
 function stars(n: number) {
@@ -15,7 +17,7 @@ function fmt(cents: number) {
   return `$${(cents / 100).toFixed(0)}`
 }
 
-export default function ProductCard({ product, onOpen }: Props) {
+export default function ProductCard({ product, onOpen, showCustomBadge }: Props) {
   return (
     <div className="product-card" data-id={product.id} onClick={() => onOpen(product)}>
       <div className="product-img" style={{ background: product.bg_color }}>
@@ -27,6 +29,7 @@ export default function ProductCard({ product, onOpen }: Props) {
             1/{product.images.length}
           </div>
         )}
+        {showCustomBadge && <CustomBadge />}
         <div className="product-badges">
           <span className={`product-badge ${product.badge.toLowerCase().replace(' ', '-')}`}>{product.badge}</span>
           {product.is_new && <span className="product-badge new">New</span>}

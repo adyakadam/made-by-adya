@@ -1,8 +1,21 @@
 export default function CustomBadge() {
   return (
     <span
-      className="absolute bottom-2 left-2 bg-black/50 text-white text-xs rounded-full px-2 py-0.5 pointer-events-none select-none"
       aria-label="Custom colors available"
+      style={{
+        position: 'absolute',
+        bottom: 8,
+        left: 8,
+        background: 'rgba(0,0,0,0.52)',
+        color: 'white',
+        fontSize: 10,
+        borderRadius: 20,
+        padding: '2px 8px',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        letterSpacing: '.04em',
+        zIndex: 2,
+      }}
     >
       ✦ Custom colors available
     </span>
