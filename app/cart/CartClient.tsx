@@ -2,23 +2,21 @@
 
 import Link from 'next/link'
 import { useCart } from '@/lib/cart-store'
-import { SEED_PRODUCTS } from '@/lib/seed-data'
-import ProductCard from '@/components/ProductCard'
 import QuickViewModal from '@/components/QuickViewModal'
 import { useState } from 'react'
 import type { Product } from '@/lib/types'
 
 function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
-export default function CartClient() {
-  const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getSubtotal, getTax, getTotal } = useCart()
+export default function CartClient({ products }: { products: Product[] }) {
+  const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getTax, getTotal } = useCart()
   const [modal, setModal] = useState<Product | null>(null)
 
   const subtotalBase = items.reduce((s, i) => s + i.price * i.qty, 0)
   const tax = getTax()
   const total = getTotal()
 
-  const related = SEED_PRODUCTS.filter((p) => !items.find((i) => i.product_id === p.id)).slice(0, 4)
+  const related = products.filter((p) => p.active && !items.find((i) => i.product_id === p.id)).slice(0, 4)
 
   return (
     <>

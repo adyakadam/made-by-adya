@@ -52,13 +52,16 @@ export async function getProductById(id: string): Promise<Product | null> {
 // ── Reviews ───────────────────────────────────────────────────────────────────
 
 export async function getReviews(limit = 6): Promise<Review[]> {
-  const { data, error } = await getSupabase()
-    .from('reviews')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(limit)
-  if (error) throw error
-  return data ?? []
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data, error } = await db
+      .from('reviews')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return data ?? []
+  } catch { return [] }
 }
 
 // ── Orders ───────────────────────────────────────────────────────────────────

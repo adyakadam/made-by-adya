@@ -58,6 +58,8 @@ nav { background: var(--white); border-bottom: 1px solid var(--warm-sand); posit
 .hero-left img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .hero-left-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 80px; background: linear-gradient(135deg, var(--blush), var(--sage)); }
 .hero-right { padding: 80px 60px; display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, var(--blush) 0%, var(--lavender) 100%); }
+.hero-brand { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 300; color: var(--accent); letter-spacing: .06em; margin-bottom: 12px; }
+.hero-brand em { font-style: italic; font-weight: 400; }
 .hero-eyebrow { font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
 .hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(44px, 5vw, 72px); font-weight: 300; line-height: 1.1; color: var(--text-dark); margin-bottom: 28px; }
 .hero-title em { font-style: italic; color: var(--accent); }

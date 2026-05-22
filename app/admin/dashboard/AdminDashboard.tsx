@@ -2,9 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { Order, Product, InstagramTile } from '@/lib/types'
+import type { Order, Product, InstagramTile, Review } from '@/lib/types'
 
-type Tab = 'orders' | 'products' | 'new-product' | 'home-grid'
+type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews'
+
+const BLANK_REVIEW: Partial<Review> = {
+  reviewer_name: '', avatar_letter: '', rating: 5, body: '', product_name: '',
+}
 
 const BLANK_TILE: InstagramTile = { image_url: '', link_url: '' }
 
@@ -24,12 +28,16 @@ export default function AdminDashboard() {
   const [newProduct, setNewProduct] = useState<Partial<Product>>(BLANK_PRODUCT)
   const [tiles, setTiles] = useState<InstagramTile[]>(Array(6).fill(null).map(() => ({ ...BLANK_TILE })))
   const [heroImage, setHeroImage] = useState('')
+  const [reviews, setReviews] = useState<Review[]>([])
+  const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
+  const [savingReview, setSavingReview] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
     fetch('/api/admin/products').then((r) => r.json()).then(setProducts).catch(() => null)
+    fetch('/api/admin/reviews').then((r) => r.json()).then((d) => { if (Array.isArray(d)) setReviews(d) }).catch(() => null)
     fetch('/api/admin/settings').then((r) => r.json()).then((d) => {
       if (d.instagram_tiles?.length) {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
@@ -70,6 +78,38 @@ export default function AdminDashboard() {
   }
 
 
+  async function saveReview() {
+    setSavingReview(true)
+    try {
+      const res = await fetch('/api/admin/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...editingReview,
+          avatar_letter: editingReview.reviewer_name?.[0]?.toUpperCase() ?? '?',
+        }),
+      })
+      const saved = await res.json()
+      if (!res.ok) throw new Error(saved.error ?? 'Save failed')
+      setReviews((prev) => {
+        const i = prev.findIndex((r) => r.id === saved.id)
+        return i >= 0 ? prev.map((r) => r.id === saved.id ? saved : r) : [saved, ...prev]
+      })
+      setEditingReview(BLANK_REVIEW)
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Review saved!' }))
+    } catch (err) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: `Error: ${err instanceof Error ? err.message : 'Something went wrong'}` }))
+    } finally {
+      setSavingReview(false)
+    }
+  }
+
+  async function deleteReview(id: string) {
+    if (!confirm('Delete this review?')) return
+    const res = await fetch(`/api/admin/reviews?id=${id}`, { method: 'DELETE' })
+    if (res.ok) setReviews((prev) => prev.filter((r) => r.id !== id))
+  }
+
   async function saveProduct() {
     setSaving(true)
     try {
@@ -98,9 +138,9 @@ export default function AdminDashboard() {
     <div className="admin-layout">
       <div className="admin-sidebar">
         <h2>made by <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>adya</span></h2>
-        {(['orders', 'products', 'new-product', 'home-grid'] as Tab[]).map((t) => (
+        {(['orders', 'products', 'new-product', 'reviews', 'home-grid'] as Tab[]).map((t) => (
           <button key={t} className={`admin-nav-link${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : '🏠 Home Grid'}
+            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : t === 'reviews' ? '⭐ Reviews' : '🏠 Home Grid'}
           </button>
         ))}
         <button className="admin-nav-link" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,.1)' }} onClick={logout}>
@@ -259,6 +299,72 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+        {/* REVIEWS */}
+        {tab === 'reviews' && (
+          <div className="admin-card">
+            <h2>Reviews</h2>
+
+            {/* Add / Edit form */}
+            <div style={{ background: 'var(--blush)', borderRadius: 12, padding: 20, marginBottom: 28 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 500, marginBottom: 14 }}>
+                {editingReview.id ? 'Edit Review' : 'Add Review'}
+              </h3>
+              <div className="form-grid">
+                <div className="form-group form-group-inline">
+                  <label>Reviewer Name</label>
+                  <input type="text" placeholder="Jane D." value={editingReview.reviewer_name ?? ''}
+                    onChange={(e) => setEditingReview((r) => ({ ...r, reviewer_name: e.target.value }))} />
+                </div>
+                <div className="form-group form-group-inline">
+                  <label>Product Name <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(what they bought)</span></label>
+                  <input type="text" placeholder="Crochet Crop Top" value={editingReview.product_name ?? ''}
+                    onChange={(e) => setEditingReview((r) => ({ ...r, product_name: e.target.value }))} />
+                </div>
+                <div className="form-group">
+                  <label>Rating (1–5)</label>
+                  <input type="number" min={1} max={5} value={editingReview.rating ?? 5}
+                    onChange={(e) => setEditingReview((r) => ({ ...r, rating: parseInt(e.target.value) }))} />
+                </div>
+                <div className="form-group form-group-inline">
+                  <label>Review Text</label>
+                  <textarea rows={3} placeholder="Write the review…" value={editingReview.body ?? ''}
+                    onChange={(e) => setEditingReview((r) => ({ ...r, body: e.target.value }))} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                <button className="btn-primary" onClick={saveReview} disabled={savingReview}>
+                  {savingReview ? 'Saving…' : editingReview.id ? 'Update Review' : 'Add Review'}
+                </button>
+                {editingReview.id && (
+                  <button className="btn-outline btn-outline-sm" onClick={() => setEditingReview(BLANK_REVIEW)}>Cancel</button>
+                )}
+              </div>
+            </div>
+
+            {/* Existing reviews list */}
+            {reviews.length === 0 ? (
+              <p style={{ color: 'var(--text-light)', fontSize: 14 }}>No reviews yet. Add one above.</p>
+            ) : (
+              reviews.map((r) => (
+                <div key={r.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '14px 0', borderBottom: '1px solid var(--warm-sand)' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 16, flexShrink: 0 }}>
+                    {r.avatar_letter}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 500, fontSize: 14 }}>{r.reviewer_name} <span style={{ color: 'var(--text-light)', fontWeight: 400 }}>— {r.product_name}</span></div>
+                    <div style={{ color: '#e8b86d', fontSize: 13 }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-mid)', marginTop: 4 }}>{r.body}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                    <button className="btn-outline btn-outline-sm" onClick={() => setEditingReview(r)}>Edit</button>
+                    <button className="btn-outline btn-outline-sm" style={{ color: '#c0392b', borderColor: '#c0392b' }} onClick={() => deleteReview(r.id)}>Delete</button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
         {/* HOME GRID */}
         {tab === 'home-grid' && (
           <div className="admin-card">
