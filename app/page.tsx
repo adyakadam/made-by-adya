@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getInstagramTiles, getHeroImageUrl } from '@/lib/supabase'
+import { getInstagramTiles, getHeroImageUrl, getSiteContent } from '@/lib/supabase'
 import NewsletterForm from '@/components/NewsletterForm'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +14,7 @@ const FALLBACK_TILES = [
 ]
 
 export default async function HomePage() {
-  const [savedTiles, heroImageUrl] = await Promise.all([getInstagramTiles(), getHeroImageUrl()])
+  const [savedTiles, heroImageUrl, c] = await Promise.all([getInstagramTiles(), getHeroImageUrl(), getSiteContent()])
 
   const tiles = FALLBACK_TILES.map((fallback, i) => ({
     ...fallback,
@@ -31,32 +31,32 @@ export default async function HomePage() {
             : <div className="hero-left-placeholder">🧶</div>}
         </div>
         <div className="hero-right">
-          <p className="hero-eyebrow">✦ Crochet &amp; Hand-Sewn — Crafted with love</p>
+          <p className="hero-eyebrow">{c.hero_eyebrow}</p>
           <div className="hero-brand">made by <em>adya</em></div>
-          <h1 className="hero-title">Wear something <em>made</em> by hand</h1>
-          <p className="hero-desc">
-            Every piece from Made by Adya is crafted entirely by hand — whether crocheted stitch by stitch
-            or carefully sewn from fabric. Released in limited batches, announced on Instagram. Once they're gone, they're gone.
-          </p>
+          <h1 className="hero-title">{c.hero_title}</h1>
+          <p className="hero-desc">{c.hero_desc}</p>
           <div>
-            <Link href="/shop" className="btn-primary">Shop Collection</Link>
-            <Link href="/about" className="btn-outline">Our Story</Link>
+            <Link href="/shop" className="btn-primary">{c.hero_cta_primary}</Link>
+            <Link href="/about" className="btn-outline">{c.hero_cta_secondary}</Link>
           </div>
         </div>
       </div>
 
       {/* PILLARS */}
       <div className="features">
-        <div className="feature-item"><div className="feature-icon">🧶</div><div className="feature-title">Crochet &amp; Hand-Sewn</div><div className="feature-desc">From crocheted textures to sewn fabrics — all made by Adya's hands.</div></div>
-        <div className="feature-item"><div className="feature-icon">🎨</div><div className="feature-title">Colorful &amp; Fun</div><div className="feature-desc">Bright acrylic yarns in every shade — bold, soft, and built to last.</div></div>
-        <div className="feature-item"><div className="feature-icon">✨</div><div className="feature-title">Limited Drops</div><div className="feature-desc">Released in small batches — when they sell out, they're gone.</div></div>
-        <div className="feature-item"><div className="feature-icon">📦</div><div className="feature-title">Ships via USPS</div><div className="feature-desc">Beautifully packaged and shipped right to your door.</div></div>
+        {c.pillars.map((p, i) => (
+          <div key={i} className="feature-item">
+            <div className="feature-icon">{p.icon}</div>
+            <div className="feature-title">{p.title}</div>
+            <div className="feature-desc">{p.desc}</div>
+          </div>
+        ))}
       </div>
 
       {/* INSTAGRAM GRID */}
       <div className="insta-strip">
-        <h3>@madebyadya</h3>
-        <p>Follow for behind-the-scenes &amp; batch drop announcements — that's where I announce every new release</p>
+        <h3>{c.insta_heading}</h3>
+        <p>{c.insta_desc}</p>
         <div className="insta-grid">
           {tiles.map((tile, i) => (
             <a
@@ -78,8 +78,8 @@ export default async function HomePage() {
 
       {/* NEWSLETTER */}
       <div className="newsletter">
-        <h3>Join the Adya Circle</h3>
-        <p>Be first to know when the next batch drops — I announce every release on Instagram first.</p>
+        <h3>{c.newsletter_heading}</h3>
+        <p>{c.newsletter_desc}</p>
         <NewsletterForm />
       </div>
     </>

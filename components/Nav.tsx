@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from '@/lib/cart-store'
 import { useState } from 'react'
 
-export default function Nav() {
+export default function Nav({ announceBar }: { announceBar?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const count = useCart((s) => s.getCount())
@@ -23,7 +23,7 @@ export default function Nav() {
   return (
     <>
       <div className="announce-bar">
-        🎀 Limited drops — follow <strong>@madebyadya</strong> on Instagram for batch announcements &nbsp;·&nbsp; Ships via USPS
+        {announceBar ?? '🎀 Limited drops — follow @madebyadya on Instagram for batch announcements · Ships via USPS'}
       </div>
       <nav>
         <div className="nav-top">

@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Order, Product, InstagramTile, Review } from '@/lib/types'
+import { type SiteContent, DEFAULT_CONTENT } from '@/lib/content'
+
+type ContentSection = 'general' | 'home' | 'about' | 'faq' | 'custom' | 'footer'
 
 function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: string[]) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -107,7 +110,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   )
 }
 
-type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews'
+type Tab = 'orders' | 'products' | 'new-product' | 'home-grid' | 'reviews' | 'content'
 
 const BLANK_REVIEW: Partial<Review> = {
   reviewer_name: '', avatar_letter: '', rating: 5, body: '', product_name: '',
@@ -134,6 +137,9 @@ export default function AdminDashboard() {
   const [reviews, setReviews] = useState<Review[]>([])
   const [editingReview, setEditingReview] = useState<Partial<Review>>(BLANK_REVIEW)
   const [savingReview, setSavingReview] = useState(false)
+  const [content, setContent] = useState<SiteContent>(DEFAULT_CONTENT)
+  const [contentSection, setContentSection] = useState<ContentSection>('general')
+  const [savingContent, setSavingContent] = useState(false)
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
 
@@ -146,6 +152,7 @@ export default function AdminDashboard() {
         setTiles(Array(6).fill(null).map((_, i) => d.instagram_tiles[i] ?? { ...BLANK_TILE }))
       }
       if (d.hero_image_url) setHeroImage(d.hero_image_url)
+      if (d.site_content) setContent({ ...DEFAULT_CONTENT, ...d.site_content })
     }).catch(() => null)
   }, [])
 
@@ -180,6 +187,23 @@ export default function AdminDashboard() {
     }
   }
 
+
+  async function saveContent() {
+    setSavingContent(true)
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ site_content: content }),
+      })
+      if (!res.ok) throw new Error('Failed')
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '✓ Content saved!' }))
+    } catch {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Error saving content.' }))
+    } finally {
+      setSavingContent(false)
+    }
+  }
 
   async function saveReview() {
     setSavingReview(true)
@@ -241,9 +265,9 @@ export default function AdminDashboard() {
     <div className="admin-layout">
       <div className="admin-sidebar">
         <h2>made by <span style={{ color: 'var(--accent)', fontStyle: 'italic' }}>adya</span></h2>
-        {(['orders', 'products', 'new-product', 'reviews', 'home-grid'] as Tab[]).map((t) => (
+        {(['orders', 'products', 'new-product', 'reviews', 'content', 'home-grid'] as Tab[]).map((t) => (
           <button key={t} className={`admin-nav-link${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : t === 'reviews' ? '⭐ Reviews' : '🏠 Home Grid'}
+            {t === 'orders' ? '📦 Orders' : t === 'products' ? '🛍️ Products' : t === 'new-product' ? '➕ New Product' : t === 'reviews' ? '⭐ Reviews' : t === 'content' ? '✏️ Content' : '🏠 Home Grid'}
           </button>
         ))}
         <button className="admin-nav-link" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,.1)' }} onClick={logout}>
@@ -471,6 +495,143 @@ export default function AdminDashboard() {
                 </div>
               ))
             )}
+          </div>
+        )}
+
+        {/* CONTENT */}
+        {tab === 'content' && (
+          <div className="admin-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2>Site Content</h2>
+              <button className="btn-primary" onClick={saveContent} disabled={savingContent}>
+                {savingContent ? 'Saving…' : 'Save All Changes'}
+              </button>
+            </div>
+
+            {/* Section nav */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+              {(['general','home','about','faq','custom','footer'] as ContentSection[]).map((s) => (
+                <button key={s} onClick={() => setContentSection(s)}
+                  style={{ padding: '6px 16px', borderRadius: 20, border: '1.5px solid var(--warm-sand)', background: contentSection === s ? 'var(--accent)' : 'var(--cream)', color: contentSection === s ? 'white' : 'var(--text-mid)', cursor: 'pointer', fontSize: 13, fontFamily: 'DM Sans, sans-serif' }}>
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            {/* GENERAL */}
+            {contentSection === 'general' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline">
+                  <label>Announce Bar Text</label>
+                  <input value={content.announce_bar} onChange={(e) => setContent((c) => ({ ...c, announce_bar: e.target.value }))} />
+                </div>
+              </div>
+            )}
+
+            {/* HOME */}
+            {contentSection === 'home' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline"><label>Hero Eyebrow</label><input value={content.hero_eyebrow} onChange={(e) => setContent((c) => ({ ...c, hero_eyebrow: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Hero Title</label><input value={content.hero_title} onChange={(e) => setContent((c) => ({ ...c, hero_title: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Hero Description</label><textarea rows={3} value={content.hero_desc} onChange={(e) => setContent((c) => ({ ...c, hero_desc: e.target.value }))} /></div>
+                <div className="form-group"><label>Primary Button</label><input value={content.hero_cta_primary} onChange={(e) => setContent((c) => ({ ...c, hero_cta_primary: e.target.value }))} /></div>
+                <div className="form-group"><label>Secondary Button</label><input value={content.hero_cta_secondary} onChange={(e) => setContent((c) => ({ ...c, hero_cta_secondary: e.target.value }))} /></div>
+                <div className="form-group form-group-inline">
+                  <label>4 Pillars</label>
+                  {content.pillars.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input value={p.icon} onChange={(e) => setContent((c) => ({ ...c, pillars: c.pillars.map((x, j) => j === i ? { ...x, icon: e.target.value } : x) }))} style={{ width: 48 }} placeholder="Icon" />
+                      <input value={p.title} onChange={(e) => setContent((c) => ({ ...c, pillars: c.pillars.map((x, j) => j === i ? { ...x, title: e.target.value } : x) }))} style={{ flex: 1 }} placeholder="Title" />
+                      <input value={p.desc} onChange={(e) => setContent((c) => ({ ...c, pillars: c.pillars.map((x, j) => j === i ? { ...x, desc: e.target.value } : x) }))} style={{ flex: 2 }} placeholder="Description" />
+                    </div>
+                  ))}
+                </div>
+                <div className="form-group form-group-inline"><label>Instagram Section Heading</label><input value={content.insta_heading} onChange={(e) => setContent((c) => ({ ...c, insta_heading: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Instagram Section Subtext</label><input value={content.insta_desc} onChange={(e) => setContent((c) => ({ ...c, insta_desc: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Newsletter Heading</label><input value={content.newsletter_heading} onChange={(e) => setContent((c) => ({ ...c, newsletter_heading: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Newsletter Subtext</label><input value={content.newsletter_desc} onChange={(e) => setContent((c) => ({ ...c, newsletter_desc: e.target.value }))} /></div>
+              </div>
+            )}
+
+            {/* ABOUT */}
+            {contentSection === 'about' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline"><label>Intro Paragraph 1</label><textarea rows={3} value={content.about_intro_1} onChange={(e) => setContent((c) => ({ ...c, about_intro_1: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Intro Paragraph 2</label><textarea rows={3} value={content.about_intro_2} onChange={(e) => setContent((c) => ({ ...c, about_intro_2: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Crochet Section Title</label><input value={content.about_crochet_title} onChange={(e) => setContent((c) => ({ ...c, about_crochet_title: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Crochet Description</label><textarea rows={3} value={content.about_crochet_desc} onChange={(e) => setContent((c) => ({ ...c, about_crochet_desc: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Sewing Section Title</label><input value={content.about_sewing_title} onChange={(e) => setContent((c) => ({ ...c, about_sewing_title: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Sewing Description</label><textarea rows={3} value={content.about_sewing_desc} onChange={(e) => setContent((c) => ({ ...c, about_sewing_desc: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Process Section Title</label><input value={content.about_process_title} onChange={(e) => setContent((c) => ({ ...c, about_process_title: e.target.value }))} /></div>
+                <div className="form-group form-group-inline">
+                  <label>Process Steps</label>
+                  {content.about_steps.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input value={s.title} onChange={(e) => setContent((c) => ({ ...c, about_steps: c.about_steps.map((x, j) => j === i ? { ...x, title: e.target.value } : x) }))} style={{ flex: 1 }} placeholder="Title" />
+                      <input value={s.desc} onChange={(e) => setContent((c) => ({ ...c, about_steps: c.about_steps.map((x, j) => j === i ? { ...x, desc: e.target.value } : x) }))} style={{ flex: 2 }} placeholder="Description" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* FAQ */}
+            {contentSection === 'faq' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline"><label>Page Heading</label><input value={content.faq_heading} onChange={(e) => setContent((c) => ({ ...c, faq_heading: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Subheading</label><input value={content.faq_sub} onChange={(e) => setContent((c) => ({ ...c, faq_sub: e.target.value }))} /></div>
+                <div className="form-group form-group-inline">
+                  <label>FAQ Items</label>
+                  {content.faq_items.map((faq, i) => (
+                    <div key={i} style={{ marginBottom: 12, padding: 12, background: 'var(--blush)', borderRadius: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <span style={{ fontSize: 12, color: 'var(--text-light)' }}>FAQ {i + 1}</span>
+                        <button type="button" onClick={() => setContent((c) => ({ ...c, faq_items: c.faq_items.filter((_, j) => j !== i) }))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 14 }}>✕ Remove</button>
+                      </div>
+                      <input placeholder="Question" value={faq.q} style={{ marginBottom: 6 }} onChange={(e) => setContent((c) => ({ ...c, faq_items: c.faq_items.map((x, j) => j === i ? { ...x, q: e.target.value } : x) }))} />
+                      <textarea rows={2} placeholder="Answer" value={faq.a} onChange={(e) => setContent((c) => ({ ...c, faq_items: c.faq_items.map((x, j) => j === i ? { ...x, a: e.target.value } : x) }))} />
+                    </div>
+                  ))}
+                  <button type="button" className="btn-outline btn-outline-sm" onClick={() => setContent((c) => ({ ...c, faq_items: [...c.faq_items, { q: '', a: '' }] }))}>+ Add FAQ</button>
+                </div>
+              </div>
+            )}
+
+            {/* CUSTOM ORDERS */}
+            {contentSection === 'custom' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline"><label>Page Heading</label><input value={content.custom_heading} onChange={(e) => setContent((c) => ({ ...c, custom_heading: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Subheading</label><input value={content.custom_sub} onChange={(e) => setContent((c) => ({ ...c, custom_sub: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Description</label><textarea rows={3} value={content.custom_desc} onChange={(e) => setContent((c) => ({ ...c, custom_desc: e.target.value }))} /></div>
+                <div className="form-group form-group-inline">
+                  <label>Bullet Points</label>
+                  {content.custom_list.map((item, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                      <input value={item} style={{ flex: 1 }} onChange={(e) => setContent((c) => ({ ...c, custom_list: c.custom_list.map((x, j) => j === i ? e.target.value : x) }))} />
+                      <button type="button" onClick={() => setContent((c) => ({ ...c, custom_list: c.custom_list.filter((_, j) => j !== i) }))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" className="btn-outline btn-outline-sm" style={{ marginTop: 4 }} onClick={() => setContent((c) => ({ ...c, custom_list: [...c.custom_list, ''] }))}>+ Add Item</button>
+                </div>
+                <div className="form-group form-group-inline"><label>Waitlist Heading</label><input value={content.custom_waitlist_heading} onChange={(e) => setContent((c) => ({ ...c, custom_waitlist_heading: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Waitlist Subtext</label><input value={content.custom_waitlist_desc} onChange={(e) => setContent((c) => ({ ...c, custom_waitlist_desc: e.target.value }))} /></div>
+              </div>
+            )}
+
+            {/* FOOTER */}
+            {contentSection === 'footer' && (
+              <div className="form-grid">
+                <div className="form-group form-group-inline"><label>Tagline</label><textarea rows={2} value={content.footer_tagline} onChange={(e) => setContent((c) => ({ ...c, footer_tagline: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Contact Email</label><input type="email" value={content.footer_email} onChange={(e) => setContent((c) => ({ ...c, footer_email: e.target.value }))} /></div>
+                <div className="form-group form-group-inline"><label>Copyright Line</label><input value={content.footer_copyright} onChange={(e) => setContent((c) => ({ ...c, footer_copyright: e.target.value }))} /></div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 24 }}>
+              <button className="btn-primary" onClick={saveContent} disabled={savingContent}>
+                {savingContent ? 'Saving…' : 'Save All Changes'}
+              </button>
+            </div>
           </div>
         )}
 

@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
 import type { Product, Order, Review, CustomOrderRequest, InstagramTile } from './types'
+import { type SiteContent, DEFAULT_CONTENT, mergeContent } from './content'
 
 // Clients are created lazily on first use so module evaluation never throws,
 // even when env vars are missing at build time.
@@ -147,6 +148,20 @@ export async function saveHeroImageUrl(url: string): Promise<void> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
   await db.from('settings').upsert({ key: 'hero_image_url', value: url })
+}
+
+export async function getSiteContent(): Promise<SiteContent> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'site_content').single()
+    return mergeContent(data?.value)
+  } catch { return DEFAULT_CONTENT }
+}
+
+export async function saveSiteContent(content: SiteContent): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  await db.from('settings').upsert({ key: 'site_content', value: content })
 }
 
 export async function adminGetCustomOrders(): Promise<CustomOrderRequest[]> {

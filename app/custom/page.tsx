@@ -1,29 +1,27 @@
 import CustomForm from './CustomForm'
 import WaitlistForm from './WaitlistForm'
+import { getSiteContent } from '@/lib/supabase'
 
-export default function CustomPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function CustomPage() {
+  const c = await getSiteContent()
   return (
     <>
       <div style={{ padding: '48px 48px 36px', borderBottom: '1px solid var(--warm-sand)' }}>
-        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 300, marginBottom: 8 }}>Custom Orders</h1>
-        <p style={{ fontSize: 14, color: 'var(--text-light)' }}>Something made exactly for you</p>
+        <h1 style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: 48, fontWeight: 300, marginBottom: 8 }}>{c.custom_heading}</h1>
+        <p style={{ fontSize: 14, color: 'var(--text-light)' }}>{c.custom_sub}</p>
       </div>
       <div className="custom-page">
         <div className="custom-left">
-          <p>Want something made just for you? Custom orders are open in limited slots each batch. I announce custom availability on Instagram (@madebyadya) along with every new drop — slots fill up fast, so follow along to catch them.</p>
+          <p>{c.custom_desc}</p>
           <br />
           <ul className="custom-list">
-            <li>Limited slots per batch — availability announced on Instagram</li>
-            <li>Custom sizing to fit your exact measurements</li>
-            <li>Choose your yarn color or fabric</li>
-            <li>Request a specific stitch pattern or silhouette</li>
-            <li>Personalized touches like monograms or embroidery</li>
-            <li>2–4 week turnaround depending on complexity</li>
-            <li>Price quote provided before work begins</li>
+            {c.custom_list.map((item, i) => <li key={i}>{item}</li>)}
           </ul>
           <div className="waitlist-section">
-            <h3>Get Notified for the Next Batch</h3>
-            <p>Leave your email and I'll reach out when custom slots open up in the next batch.</p>
+            <h3>{c.custom_waitlist_heading}</h3>
+            <p>{c.custom_waitlist_desc}</p>
             <WaitlistForm />
           </div>
         </div>
