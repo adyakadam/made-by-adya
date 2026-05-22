@@ -5,8 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import type { Product, ProductCategory, SortOption } from '@/lib/types'
 import ProductCard from '@/components/ProductCard'
 import QuickViewModal from '@/components/QuickViewModal'
-import ReviewCard from '@/components/ReviewCard'
-import { SEED_REVIEWS } from '@/lib/seed-data'
+
 
 const CATEGORIES: { label: string; value: ProductCategory }[] = [
   { label: 'All',         value: 'all' },
@@ -95,13 +94,6 @@ export default function ShopClient({ products }: { products: Product[] }) {
           ))}
         </div>
       )}
-
-      <div className="reviews-section">
-        <h3>Customer Reviews</h3>
-        <div className="review-cards">
-          {SEED_REVIEWS.map((r) => <ReviewCard key={r.id} review={r} />)}
-        </div>
-      </div>
 
       {modal && <QuickViewModal product={modal} onClose={() => setModal(null)} />}
     </>
