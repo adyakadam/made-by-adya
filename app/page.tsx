@@ -1,7 +1,5 @@
 import Link from 'next/link'
-import ReviewCard from '@/components/ReviewCard'
-import { SEED_REVIEWS } from '@/lib/seed-data'
-import { getInstagramTiles, getHeroImageUrl, getReviews } from '@/lib/supabase'
+import { getInstagramTiles, getHeroImageUrl } from '@/lib/supabase'
 import NewsletterForm from '@/components/NewsletterForm'
 
 export const dynamic = 'force-dynamic'
@@ -16,10 +14,7 @@ const FALLBACK_TILES = [
 ]
 
 export default async function HomePage() {
-  const [savedTiles, heroImageUrl, fetchedReviews] = await Promise.all([
-    getInstagramTiles(), getHeroImageUrl(), getReviews(3)
-  ])
-  const reviews = fetchedReviews.length > 0 ? fetchedReviews : SEED_REVIEWS.slice(0, 3)
+  const [savedTiles, heroImageUrl] = await Promise.all([getInstagramTiles(), getHeroImageUrl()])
 
   const tiles = FALLBACK_TILES.map((fallback, i) => ({
     ...fallback,
@@ -56,14 +51,6 @@ export default async function HomePage() {
         <div className="feature-item"><div className="feature-icon">🎨</div><div className="feature-title">Colorful &amp; Fun</div><div className="feature-desc">Bright acrylic yarns in every shade — bold, soft, and built to last.</div></div>
         <div className="feature-item"><div className="feature-icon">✨</div><div className="feature-title">Limited Drops</div><div className="feature-desc">Released in small batches — when they sell out, they're gone.</div></div>
         <div className="feature-item"><div className="feature-icon">📦</div><div className="feature-title">Ships via USPS</div><div className="feature-desc">Beautifully packaged and shipped right to your door.</div></div>
-      </div>
-
-      {/* REVIEWS */}
-      <div className="reviews-section">
-        <h3>What customers are saying</h3>
-        <div className="review-cards">
-          {reviews.map((r) => <ReviewCard key={r.id} review={r} />)}
-        </div>
       </div>
 
       {/* INSTAGRAM GRID */}
