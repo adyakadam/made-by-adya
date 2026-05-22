@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { getSiteContent, getAboutImageUrl } from '@/lib/supabase'
+import AutoPlayVideo from '@/components/AutoPlayVideo'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +19,7 @@ export default async function AboutPage() {
           {aboutImageUrl
             ? <div style={{ width: 260, height: 260, borderRadius: '50%', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.12)' }}>
                 {/\.(mp4|webm|mov|m4v)(\?|$)/i.test(aboutImageUrl)
-                  ? <video src={aboutImageUrl} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ? <AutoPlayVideo src={aboutImageUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   : <img src={aboutImageUrl} alt="Adya" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
               </div>
             : '🪡'}
