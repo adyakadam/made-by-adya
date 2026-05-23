@@ -73,7 +73,7 @@ export default function CartClient({ products }: { products: Product[] }) {
                 </div>
                 <div className="cart-item-info">
                   <div className="cart-item-name">{item.name}</div>
-                  <div className="cart-item-sub">Size: {item.size} · Colour: <span style={{ display:'inline-block', width:12, height:12, borderRadius:'50%', background:item.color, verticalAlign:'middle', marginLeft:2 }} /></div>
+                  <div className="cart-item-sub">Size: {item.size} · Color: <span style={{ display:'inline-block', width:12, height:12, borderRadius:'50%', background:item.color, verticalAlign:'middle', marginLeft:2 }} /></div>
                   <div className="qty-control">
                     <button className="qty-btn" onClick={() => updateQty(item.product_id, item.size, item.color, item.qty - 1)}>−</button>
                     <span className="qty-num">{item.qty}</span>

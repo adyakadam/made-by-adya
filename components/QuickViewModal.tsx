@@ -45,7 +45,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
 
   function handleAdd() {
     if (!selectedSize) { showToast('Please select a size.'); return }
-    if (!selectedColor) { showToast('Please select a colour.'); return }
+    if (!selectedColor) { showToast('Please select a color.'); return }
     addItem({
       product_id: product!.id,
       name: product!.name,
@@ -121,7 +121,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
             ))}
           </div>
 
-          <div className="color-label">Yarn / Colour</div>
+          <div className="color-label">Yarn / Color</div>
           <div className="color-row">
             {product.colors.map((c) => {
               const qty = product.color_stock?.[c]
@@ -150,8 +150,8 @@ export default function QuickViewModal({ product, onClose }: Props) {
           {(() => {
             const colorQty = selectedColor ? product.color_stock?.[selectedColor] : undefined
             const qty = colorQty !== undefined ? colorQty : product.stock
-            if (qty === 0) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock{selectedColor ? ' in this colour' : ''}</div>
-            if (qty <= 3) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Only {qty} left{selectedColor ? ' in this colour' : ''}!</div>
+            if (qty === 0) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock{selectedColor ? ' in this color' : ''}</div>
+            if (qty <= 3) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Only {qty} left{selectedColor ? ' in this color' : ''}!</div>
             return null
           })()}
 

@@ -84,7 +84,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
       {/* Upload image to pick from */}
       <div style={{ marginBottom: 10 }}>
         <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 6 }}>
-          Upload a photo to pick yarn/fabric colours from it:
+          Upload a photo to pick yarn/fabric colors from it:
         </label>
         <input type="file" accept="image/*" onChange={loadFile} style={{ fontSize: 13 }} />
       </div>
@@ -92,7 +92,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
       {imgSrc && (
         <div style={{ marginBottom: 10 }}>
           <p style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 6 }}>
-            Click anywhere on the image to add that colour →{' '}
+            Click anywhere on the image to add that color →{' '}
             {hovered && <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}><span style={{ width:12, height:12, borderRadius:'50%', background:hovered, display:'inline-block', border:'1px solid #ccc' }} />{hovered}</span>}
           </p>
           <canvas
@@ -113,7 +113,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
           style={{ width: 110, fontSize: 13 }}
         />
         {manualHex && <div style={{ width: 20, height: 20, borderRadius: '50%', background: manualHex.startsWith('#') ? manualHex : `#${manualHex}`, border: '1px solid #ccc' }} />}
-        <button type="button" className="btn-outline btn-outline-sm" onClick={addManual}>Add colour</button>
+        <button type="button" className="btn-outline btn-outline-sm" onClick={addManual}>Add color</button>
       </div>
 
     </div>
@@ -490,7 +490,7 @@ export default function AdminDashboard() {
               <div className="form-group"><label>Badge Label</label><input type="text" value={newProduct.badge ?? ''} onChange={(e) => setNewProduct((p) => ({ ...p, badge: e.target.value }))} /></div>
               <div className="form-group"><label>Sizes (comma-separated)</label><input type="text" value={(newProduct.sizes ?? []).join(',')} onChange={(e) => setNewProduct((p) => ({ ...p, sizes: e.target.value.split(',').map((s) => s.trim()) }))} /></div>
               <div className="form-group form-group-inline">
-                <label>Yarn / Fabric Colours</label>
+                <label>Yarn / Fabric Colors</label>
                 <ColorPicker
                   colors={newProduct.colors ?? []}
                   onChange={(c) => setNewProduct((p) => ({ ...p, colors: c }))}
@@ -526,7 +526,7 @@ export default function AdminDashboard() {
               </div>
               {(newProduct.colors ?? []).length > 0 && (
                 <div className="form-group form-group-inline">
-                  <label>Stock per Colour <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(leave blank to use the overall stock number)</span></label>
+                  <label>Stock per Color <span style={{ fontWeight: 400, color: 'var(--text-light)', fontSize: 12 }}>(leave blank to use the overall stock number)</span></label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(newProduct.colors ?? []).map((color) => (
                       <div key={color} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

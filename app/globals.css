@@ -151,7 +151,7 @@ nav { background: var(--white); border-bottom: 1px solid var(--warm-sand); posit
 .color-label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-light); margin-bottom: 10px; }
 .color-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
 .color-swatch-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .2s, transform .2s; }
+.color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .2s, transform .2s; overflow: hidden; flex-shrink: 0; }
 .color-swatch:hover, .color-swatch.selected { border-color: var(--accent); transform: scale(1.1); }
 .color-swatch.sold-out { opacity: 0.35; cursor: not-allowed; }
 .color-swatch.sold-out:hover { transform: none; border-color: transparent; }
