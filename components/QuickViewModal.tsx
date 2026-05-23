@@ -13,6 +13,14 @@ interface Props {
   onClose: () => void
 }
 
+function swatchBg(color: string) {
+  if (color.includes('|')) {
+    const [a, b] = color.split('|')
+    return `linear-gradient(135deg, ${a} 50%, ${b} 50%)`
+  }
+  return color
+}
+
 function stars(n: number) {
   return Array.from({ length: 5 }, (_, i) => (i < Math.round(n) ? '★' : '☆')).join('')
 }
@@ -122,7 +130,7 @@ export default function QuickViewModal({ product, onClose }: Props) {
                 <div key={c} className="color-swatch-wrap">
                   <div
                     className={`color-swatch${selectedColor === c ? ' selected' : ''}${soldOut ? ' sold-out' : ''}`}
-                    style={{ background: c }}
+                    style={{ background: swatchBg(c) }}
                     onClick={() => { if (!soldOut) setSelectedColor(c) }}
                   />
                   {qty !== undefined && (

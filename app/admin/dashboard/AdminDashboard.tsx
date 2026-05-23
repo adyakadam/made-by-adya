@@ -8,11 +8,21 @@ import type { PromoCode } from '@/lib/supabase'
 
 type ContentSection = 'general' | 'home' | 'about' | 'faq' | 'custom' | 'footer'
 
+function swatchBg(color: string) {
+  if (color.includes('|')) {
+    const [a, b] = color.split('|')
+    return `linear-gradient(135deg, ${a} 50%, ${b} 50%)`
+  }
+  return color
+}
+
 function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: string[]) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [imgSrc, setImgSrc] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const [manualHex, setManualHex] = useState('')
+  const [multiA, setMultiA] = useState('#f2d9d0')
+  const [multiB, setMultiB] = useState('#c8d8c0')
 
   function loadFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -66,7 +76,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         {colors.map((c) => (
           <div key={c} title={c} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--cream)', borderRadius: 20, padding: '3px 10px 3px 6px', border: '1.5px solid var(--warm-sand)' }}>
-            <div style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
+            <div style={{ width: 18, height: 18, borderRadius: '50%', background: swatchBg(c), border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
             <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{c}</span>
             <button onClick={() => onChange(colors.filter((x) => x !== c))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13, lineHeight: 1, marginLeft: 2, padding: 0 }}>✕</button>
           </div>
@@ -106,6 +116,31 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
         />
         {manualHex && <div style={{ width: 20, height: 20, borderRadius: '50%', background: manualHex.startsWith('#') ? manualHex : `#${manualHex}`, border: '1px solid #ccc' }} />}
         <button type="button" className="btn-outline btn-outline-sm" onClick={addManual}>Add colour</button>
+      </div>
+
+      {/* Multicolor swatch */}
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--warm-sand)' }}>
+        <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 8 }}>Add a split (multicolor) swatch:</label>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="color" value={multiA} onChange={(e) => setMultiA(e.target.value)} style={{ width: 36, height: 28, border: 'none', cursor: 'pointer', borderRadius: 4 }} />
+            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiA}</span>
+          </div>
+          <span style={{ fontSize: 12, color: 'var(--text-light)' }}>+</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="color" value={multiB} onChange={(e) => setMultiB(e.target.value)} style={{ width: 36, height: 28, border: 'none', cursor: 'pointer', borderRadius: 4 }} />
+            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiB}</span>
+          </div>
+          <div style={{ width: 24, height: 24, borderRadius: '50%', background: `linear-gradient(135deg, ${multiA} 50%, ${multiB} 50%)`, border: '1.5px solid rgba(0,0,0,.15)', flexShrink: 0 }} />
+          <button
+            type="button"
+            className="btn-outline btn-outline-sm"
+            onClick={() => {
+              const val = `${multiA}|${multiB}`
+              if (!colors.includes(val)) onChange([...colors, val])
+            }}
+          >Add split swatch</button>
+        </div>
       </div>
     </div>
   )
@@ -491,7 +526,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(newProduct.colors ?? []).map((color) => (
                       <div key={color} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: color, border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: swatchBg(color), border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />
                         <span style={{ fontSize: 12, color: 'var(--text-mid)', width: 72 }}>{color}</span>
                         <input
                           type="number"
