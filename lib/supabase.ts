@@ -30,24 +30,41 @@ export { getSupabaseAdmin as supabaseAdmin }
 
 // ── Products ──────────────────────────────────────────────────────────────────
 
+async function getColorStocks(): Promise<Record<string, Record<string, number>>> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'color_stocks').single()
+    return (data?.value as Record<string, Record<string, number>>) ?? {}
+  } catch { return {} }
+}
+
+async function saveColorStock(productId: string, colorStock: Record<string, number>): Promise<void> {
+  const db = getSupabaseAdmin() ?? getSupabase()
+  const stocks = await getColorStocks()
+  stocks[productId] = colorStock
+  await db.from('settings').upsert({ key: 'color_stocks', value: stocks })
+}
+
+function mergeColorStocks(products: Product[], stocks: Record<string, Record<string, number>>): Product[] {
+  return products.map((p) => ({ ...p, color_stock: stocks[p.id] ?? p.color_stock ?? {} }))
+}
+
 export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await getSupabase()
-    .from('products')
-    .select('*')
-    .eq('active', true)
-    .order('created_at', { ascending: false })
+  const [{ data, error }, stocks] = await Promise.all([
+    getSupabase().from('products').select('*').eq('active', true).order('created_at', { ascending: false }),
+    getColorStocks(),
+  ])
   if (error) throw error
-  return data ?? []
+  return mergeColorStocks(data ?? [], stocks)
 }
 
 export async function getProductById(id: string): Promise<Product | null> {
-  const { data, error } = await getSupabase()
-    .from('products')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const [{ data, error }, stocks] = await Promise.all([
+    getSupabase().from('products').select('*').eq('id', id).single(),
+    getColorStocks(),
+  ])
   if (error) return null
-  return data
+  return { ...data, color_stock: stocks[data.id] ?? data.color_stock ?? {} }
 }
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
@@ -100,9 +117,12 @@ export async function adminGetAllOrders(): Promise<Order[]> {
 export async function adminGetAllProducts(): Promise<Product[]> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
-  const { data, error } = await db.from('products').select('*').order('created_at', { ascending: false })
+  const [{ data, error }, stocks] = await Promise.all([
+    db.from('products').select('*').order('created_at', { ascending: false }),
+    getColorStocks(),
+  ])
   if (error) throw error
-  return data ?? []
+  return mergeColorStocks(data ?? [], stocks)
 }
 
 export async function adminUpsertProduct(product: Partial<Product> & { id?: string }): Promise<Product> {
@@ -112,7 +132,7 @@ export async function adminUpsertProduct(product: Partial<Product> & { id?: stri
   const { data, error } = await db.from('products').upsert(rest).select().single()
   if (error) throw new Error(`Supabase error: ${error.message} (code: ${error.code})`)
   if (color_stock !== undefined && data?.id) {
-    await db.from('products').update({ color_stock } as never).eq('id', data.id)
+    await saveColorStock(data.id, color_stock)
   }
   return { ...data, color_stock }
 }
