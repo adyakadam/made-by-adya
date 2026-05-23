@@ -116,6 +116,7 @@ alter table reviews          enable row level security;
 alter table subscribers      enable row level security;
 alter table custom_orders    enable row level security;
 alter table contact_messages enable row level security;
+alter table settings         enable row level security;
 
 -- Public can read active products and reviews
 create policy "Public read products" on products for select using (active = true);
