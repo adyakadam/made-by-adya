@@ -108,9 +108,13 @@ export async function adminGetAllProducts(): Promise<Product[]> {
 export async function adminUpsertProduct(product: Partial<Product> & { id?: string }): Promise<Product> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
-  const { data, error } = await db.from('products').upsert(product).select().single()
+  const { color_stock, ...rest } = product
+  const { data, error } = await db.from('products').upsert(rest).select().single()
   if (error) throw new Error(`Supabase error: ${error.message} (code: ${error.code})`)
-  return data
+  if (color_stock !== undefined && data?.id) {
+    await db.from('products').update({ color_stock } as never).eq('id', data.id)
+  }
+  return { ...data, color_stock }
 }
 
 export async function adminUpdateOrderStatus(id: string, status: Order['status'], trackingNumber?: string): Promise<void> {
