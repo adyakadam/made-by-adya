@@ -328,7 +328,7 @@ export default function AdminDashboard() {
         headers: { 'Content-Type': 'application/json' },
       })
       const saved = await res.json()
-      if (!res.ok) throw new Error(saved.error ?? 'Save failed')
+      if (!res.ok) throw new Error(JSON.stringify(saved))
       setProducts((prev) => {
         const i = prev.findIndex((p) => p.id === saved.id)
         return i >= 0 ? prev.map((p) => p.id === saved.id ? saved : p) : [saved, ...prev]
