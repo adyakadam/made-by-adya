@@ -71,12 +71,18 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   return (
     <div>
       {/* Current swatches */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
         {colors.map((c) => (
-          <div key={c} title={c} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--cream)', borderRadius: 20, padding: '3px 10px 3px 6px', border: '1.5px solid var(--warm-sand)' }}>
-            <div style={{ width: 18, height: 18, borderRadius: '50%', background: swatchBg(c), border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{c}</span>
-            <button onClick={() => onChange(colors.filter((x) => x !== c))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13, lineHeight: 1, marginLeft: 2, padding: 0 }}>✕</button>
+          <div key={c} title={c} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ position: 'relative', width: 40, height: 40 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: swatchBg(c), border: '2px solid var(--warm-sand)' }} />
+              <button
+                onClick={() => onChange(colors.filter((x) => x !== c))}
+                title="Remove colour"
+                style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#c0392b', color: 'white', border: '2px solid white', cursor: 'pointer', fontSize: 10, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, fontWeight: 700 }}
+              >✕</button>
+            </div>
+            <span style={{ fontSize: 9, color: 'var(--text-light)', maxWidth: 44, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{c}</span>
           </div>
         ))}
       </div>
