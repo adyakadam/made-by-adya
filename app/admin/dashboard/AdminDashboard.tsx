@@ -21,8 +21,6 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
   const [imgSrc, setImgSrc] = useState<string | null>(null)
   const [hovered, setHovered] = useState<string | null>(null)
   const [manualHex, setManualHex] = useState('')
-  const [multiA, setMultiA] = useState('#f2d9d0')
-  const [multiB, setMultiB] = useState('#c8d8c0')
 
   function loadFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -118,30 +116,6 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
         <button type="button" className="btn-outline btn-outline-sm" onClick={addManual}>Add colour</button>
       </div>
 
-      {/* Multicolor swatch */}
-      <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--warm-sand)' }}>
-        <label style={{ fontSize: 12, color: 'var(--text-mid)', display: 'block', marginBottom: 8 }}>Add a split (multicolor) swatch:</label>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="color" value={multiA} onChange={(e) => setMultiA(e.target.value)} style={{ width: 36, height: 28, border: 'none', cursor: 'pointer', borderRadius: 4 }} />
-            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiA}</span>
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--text-light)' }}>+</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="color" value={multiB} onChange={(e) => setMultiB(e.target.value)} style={{ width: 36, height: 28, border: 'none', cursor: 'pointer', borderRadius: 4 }} />
-            <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiB}</span>
-          </div>
-          <div style={{ width: 24, height: 24, borderRadius: '50%', background: `linear-gradient(135deg, ${multiA} 50%, ${multiB} 50%)`, border: '1.5px solid rgba(0,0,0,.15)', flexShrink: 0 }} />
-          <button
-            type="button"
-            className="btn-outline btn-outline-sm"
-            onClick={() => {
-              const val = `${multiA}|${multiB}`
-              if (!colors.includes(val)) onChange([...colors, val])
-            }}
-          >Add split swatch</button>
-        </div>
-      </div>
     </div>
   )
 }
@@ -224,6 +198,8 @@ export default function AdminDashboard() {
   const [expandedPromo, setExpandedPromo] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
+  const [multiA, setMultiA] = useState('#f2d9d0')
+  const [multiB, setMultiB] = useState('#c8d8c0')
 
   useEffect(() => {
     fetch('/api/admin/orders').then((r) => r.json()).then(setOrders).catch(() => null)
@@ -519,6 +495,31 @@ export default function AdminDashboard() {
                   colors={newProduct.colors ?? []}
                   onChange={(c) => setNewProduct((p) => ({ ...p, colors: c }))}
                 />
+              </div>
+              <div className="form-group form-group-inline">
+                <label>Add a Split (Multicolor) Swatch</label>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', padding: '10px 14px', background: 'var(--cream)', border: '1.5px solid var(--warm-sand)', borderRadius: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="color" value={multiA} onChange={(e) => setMultiA(e.target.value)} style={{ width: 36, height: 28, cursor: 'pointer', borderRadius: 4, border: 'none' }} />
+                    <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiA}</span>
+                  </div>
+                  <span style={{ fontSize: 14, color: 'var(--text-light)' }}>+</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <input type="color" value={multiB} onChange={(e) => setMultiB(e.target.value)} style={{ width: 36, height: 28, cursor: 'pointer', borderRadius: 4, border: 'none' }} />
+                    <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{multiB}</span>
+                  </div>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${multiA} 50%, ${multiB} 50%)`, border: '1.5px solid rgba(0,0,0,.15)', flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    className="btn-outline btn-outline-sm"
+                    onClick={() => {
+                      const val = `${multiA}|${multiB}`
+                      if (!(newProduct.colors ?? []).includes(val)) {
+                        setNewProduct((p) => ({ ...p, colors: [...(p.colors ?? []), val] }))
+                      }
+                    }}
+                  >Add split swatch</button>
+                </div>
               </div>
               {(newProduct.colors ?? []).length > 0 && (
                 <div className="form-group form-group-inline">
