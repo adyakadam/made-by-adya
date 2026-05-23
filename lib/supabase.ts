@@ -129,6 +129,7 @@ export async function adminUpsertProduct(product: Partial<Product> & { id?: stri
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
   const { color_stock, ...rest } = product
+  console.log('upsert payload keys:', Object.keys(rest))
   const { data, error } = await db.from('products').upsert(rest).select().single()
   if (error) throw new Error(`Supabase error: ${error.message} (code: ${error.code})`)
   if (color_stock !== undefined && data?.id) {
