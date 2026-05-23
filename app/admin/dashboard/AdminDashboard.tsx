@@ -16,6 +16,15 @@ function swatchBg(color: string) {
   return color
 }
 
+function SplitSwatch({ a, b, size = 18 }: { a: string; b: string; size?: number }) {
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, position: 'relative', border: '1px solid rgba(0,0,0,.1)' }}>
+      <div style={{ position: 'absolute', inset: 0, background: a, clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: b, clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
+    </div>
+  )
+}
+
 function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: string[]) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [imgSrc, setImgSrc] = useState<string | null>(null)
@@ -74,7 +83,7 @@ function ColorPicker({ colors, onChange }: { colors: string[]; onChange: (c: str
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
         {colors.map((c) => (
           <div key={c} title={c} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'var(--cream)', borderRadius: 20, padding: '3px 10px 3px 6px', border: '1.5px solid var(--warm-sand)' }}>
-            <div style={{ width: 18, height: 18, borderRadius: '50%', background: swatchBg(c), border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />
+            {c.includes('|') ? (() => { const [a,b]=c.split('|'); return <SplitSwatch a={a} b={b} /> })() : <div style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,.1)', flexShrink: 0 }} />}
             <span style={{ fontSize: 11, color: 'var(--text-mid)' }}>{c}</span>
             <button onClick={() => onChange(colors.filter((x) => x !== c))} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13, lineHeight: 1, marginLeft: 2, padding: 0 }}>✕</button>
           </div>
@@ -508,7 +517,7 @@ export default function AdminDashboard() {
                     <input type="color" value={/^#[0-9a-fA-F]{6}$/.test(multiB) ? multiB : '#c8d8c0'} onChange={(e) => setMultiB(e.target.value)} style={{ width: 36, height: 28, cursor: 'pointer', borderRadius: 4, border: 'none' }} />
                     <input type="text" value={multiB} onChange={(e) => setMultiB(e.target.value)} placeholder="#c8d8c0" style={{ width: 80, fontSize: 12 }} />
                   </div>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${multiA} 50%, ${multiB} 50%)`, border: '1.5px solid rgba(0,0,0,.15)', flexShrink: 0 }} />
+                  <SplitSwatch a={multiA} b={multiB} size={28} />
                   <button
                     type="button"
                     className="btn-outline btn-outline-sm"
@@ -530,7 +539,7 @@ export default function AdminDashboard() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {(newProduct.colors ?? []).map((color) => (
                       <div key={color} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: swatchBg(color), border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />
+                        {color.includes('|') ? (() => { const [a,b]=color.split('|'); return <SplitSwatch a={a} b={b} size={22} /> })() : <div style={{ width: 22, height: 22, borderRadius: '50%', background: color, border: '1.5px solid var(--warm-sand)', flexShrink: 0 }} />}
                         <span style={{ fontSize: 12, color: 'var(--text-mid)', width: 72 }}>{color}</span>
                         <input
                           type="number"

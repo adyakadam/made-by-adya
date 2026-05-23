@@ -13,12 +13,17 @@ interface Props {
   onClose: () => void
 }
 
-function swatchBg(color: string) {
+function SwatchInner({ color }: { color: string }) {
   if (color.includes('|')) {
     const [a, b] = color.split('|')
-    return `linear-gradient(135deg, ${a} 50%, ${b} 50%)`
+    return (
+      <>
+        <span style={{ position: 'absolute', inset: 0, background: a, clipPath: 'polygon(0 0, 100% 0, 0 100%)' }} />
+        <span style={{ position: 'absolute', inset: 0, background: b, clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }} />
+      </>
+    )
   }
-  return color
+  return null
 }
 
 function stars(n: number) {
@@ -130,9 +135,11 @@ export default function QuickViewModal({ product, onClose }: Props) {
                 <div key={c} className="color-swatch-wrap">
                   <div
                     className={`color-swatch${selectedColor === c ? ' selected' : ''}${soldOut ? ' sold-out' : ''}`}
-                    style={{ background: swatchBg(c) }}
+                    style={c.includes('|') ? { position: 'relative' } : { background: c }}
                     onClick={() => { if (!soldOut) setSelectedColor(c) }}
-                  />
+                  >
+                    <SwatchInner color={c} />
+                  </div>
                   {qty !== undefined && (
                     <span className="color-stock-label">
                       {soldOut ? 'sold out' : `${qty} left`}
