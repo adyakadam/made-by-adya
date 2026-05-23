@@ -21,6 +21,7 @@ create table if not exists products (
   review_count  integer default 0,
   sizes         text[] default '{}',
   colors        text[] default '{}',
+  color_stock   jsonb default '{}',
   active        boolean default true,
   created_at    timestamptz default now()
 );

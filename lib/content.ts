@@ -78,6 +78,7 @@ export const DEFAULT_CONTENT: SiteContent = {
     { q: 'How does the drop system work?', a: "Everything is made in small batches. I announce each new batch on Instagram (@madebyadya) before the shop goes live — follow me there to be the first to know. Once a batch sells out, those exact pieces won't be restocked." },
     { q: 'When is the next drop?', a: "All batch release dates are announced on Instagram (@madebyadya). I don't have a fixed schedule — drops happen when the batch is ready. Follow along so you don't miss it!" },
     { q: 'Can I request a custom piece?', a: 'Yes! Custom orders are open in limited slots per batch. Fill out the Custom Orders form to submit your request. Availability is announced on Instagram along with each batch.' },
+    { q: 'Can I get a listed product in a different color?', a: "Absolutely! Each product is made by hand, so color variations are possible through a custom order. If you love a listed piece but want it in a different yarn color or fabric shade, head to the Custom Orders page and describe what you have in mind. Custom slots are limited per batch, so fill out the form to get on the waitlist." },
     { q: 'How much does shipping cost?', a: 'Shipping is calculated at checkout based on your location. I ship via USPS — you can choose from First Class ($5.99, 3–7 days), Priority Mail ($9.99, 1–3 days), or Priority Mail Express ($29.99, overnight). Orders are dispatched within 2–3 business days.' },
     { q: 'Do you accept returns or exchanges?', a: 'Due to the handmade, limited-batch nature of each piece, all sales are final. However, if something arrives damaged or incorrect, please contact me within 7 days and I\'ll make it right.' },
     { q: "What's the difference between your crochet and hand-sewn pieces?", a: 'Crochet pieces are made entirely from yarn — they have texture, stretch, and that signature handmade look. Hand-sewn pieces are constructed from fabric (chiffon, cotton voile) and follow more traditional construction techniques. Both are made entirely by hand!' },
@@ -92,7 +93,8 @@ export const DEFAULT_CONTENT: SiteContent = {
   custom_list: [
     'Limited slots per batch — availability announced on Instagram',
     'Custom sizing to fit your exact measurements',
-    'Choose your yarn color or fabric',
+    'Want a listed piece in a different color? Request it here!',
+    'Choose your yarn color or fabric from scratch',
     'Request a specific stitch pattern or silhouette',
     'Personalized touches like monograms or embroidery',
     '2–4 week turnaround depending on complexity',

@@ -134,6 +134,9 @@ export default function QuickViewModal({ product, onClose }: Props) {
               )
             })}
           </div>
+          <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: -12, marginBottom: 16 }}>
+            Want a different color? <Link href="/custom" className="size-guide-link" onClick={onClose}>Request a custom order →</Link>
+          </p>
           <VariantWhisper />
 
           {(() => {
