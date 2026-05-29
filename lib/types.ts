@@ -54,7 +54,6 @@ export interface Order {
   subtotal: number // in cents
   tax: number
   total: number
-  gift_wrap: boolean
   status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled'
   order_number: string
   tracking_number: string | null

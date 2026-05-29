@@ -801,11 +801,6 @@ export default function AdminDashboard() {
                                       <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-mid)' }}>
                                         <span>Subtotal</span><span>{fmt(order.subtotal)}</span>
                                       </div>
-                                      {order.gift_wrap && (
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-mid)' }}>
-                                          <span>Gift wrap</span><span>{fmt(500)}</span>
-                                        </div>
-                                      )}
                                       <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-mid)' }}>
                                         <span>Tax</span><span>{fmt(order.tax)}</span>
                                       </div>
@@ -826,13 +821,6 @@ export default function AdminDashboard() {
                                         {addr.country}
                                       </div>
                                     </div>
-
-                                    {order.gift_wrap && (
-                                      <div>
-                                        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-light)', marginBottom: 6 }}>Gift wrap</div>
-                                        <span style={{ fontSize: 12, background: '#f5e6df', color: 'var(--accent)', padding: '3px 10px', borderRadius: 12 }}>🎁 Yes</span>
-                                      </div>
-                                    )}
 
                                     <div>
                                       <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-light)', marginBottom: 8 }}>Tracking number</div>

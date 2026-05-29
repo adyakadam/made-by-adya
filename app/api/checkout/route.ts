@@ -4,10 +4,9 @@ import { getPromoCodes } from '@/lib/supabase'
 import type { CartItem, ShippingAddress } from '@/lib/types'
 
 export async function POST(req: NextRequest) {
-  const { items, shipping, giftWrap, promoCode } = (await req.json()) as {
+  const { items, shipping, promoCode } = (await req.json()) as {
     items: CartItem[]
     shipping: ShippingAddress
-    giftWrap: boolean
     promoCode?: string
   }
 
@@ -49,17 +48,6 @@ export async function POST(req: NextRequest) {
       },
     }
   })
-
-  if (giftWrap) {
-    lineItems.push({
-      quantity: 1,
-      price_data: {
-        currency: 'usd',
-        unit_amount: 500,
-        product_data: { name: '🎁 Gift Wrapping', description: 'Tissue paper, ribbon, and a handwritten note', metadata: { product_id: '', size: '', color: '' } },
-      },
-    })
-  }
 
   const shippingOptions = promoFreeShipping
     ? [
@@ -146,7 +134,6 @@ export async function POST(req: NextRequest) {
       metadata: {
         items: JSON.stringify(items.map((i) => ({ product_id: i.product_id, name: i.name, price: i.price, qty: i.qty, size: i.size, color: i.color, emoji: i.emoji }))),
         shipping: JSON.stringify(shipping),
-        gift_wrap: String(giftWrap),
       },
     })
     return Response.json({ url: session.url })

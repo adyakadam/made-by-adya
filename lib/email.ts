@@ -134,20 +134,13 @@ function addressBlock(addr: ShippingAddress): string {
   </div>`
 }
 
-function totalsBlock(subtotal: number, tax: number, total: number, giftWrap: boolean): string {
-  const giftRow = giftWrap
-    ? `<tr>
-        <td style="padding:4px 0;font-size:13px;color:${C.textMid};">Gift wrap</td>
-        <td style="padding:4px 0;text-align:right;font-size:13px;color:${C.textMid};">${cents(500)}</td>
-       </tr>`
-    : ''
+function totalsBlock(subtotal: number, tax: number, total: number): string {
   return `
   <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 0;">
     <tr>
       <td style="padding:4px 0;font-size:13px;color:${C.textMid};">Subtotal</td>
       <td style="padding:4px 0;text-align:right;font-size:13px;color:${C.textMid};">${cents(subtotal)}</td>
     </tr>
-    ${giftRow}
     <tr>
       <td style="padding:4px 0;font-size:13px;color:${C.textMid};">Tax</td>
       <td style="padding:4px 0;text-align:right;font-size:13px;color:${C.textMid};">${cents(tax)}</td>
@@ -168,7 +161,6 @@ export async function sendOrderConfirmation(order: {
   subtotal: number
   tax: number
   total: number
-  gift_wrap: boolean
   shipping_address: ShippingAddress
 }) {
   const resend = getResend()
@@ -193,7 +185,7 @@ export async function sendOrderConfirmation(order: {
 
     <h3 style="font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:${C.textLight};margin:0 0 4px;">Your items</h3>
     ${itemsTable(order.items)}
-    ${totalsBlock(order.subtotal, order.tax, order.total, order.gift_wrap)}
+    ${totalsBlock(order.subtotal, order.tax, order.total)}
 
     <div style="height:24px;"></div>
 

@@ -14,7 +14,7 @@ const BLANK_ADDR: ShippingAddress = {
 
 export default function CheckoutClient() {
   const router = useRouter()
-  const { items, giftWrap, promoCode, getSubtotal, getTax, getTotal } = useCart()
+  const { items, promoCode, getSubtotal, getTax, getTotal } = useCart()
   const [step, setStep] = useState(1)
   const [addr, setAddr] = useState<ShippingAddress>(BLANK_ADDR)
   const [loading, setLoading] = useState(false)
@@ -40,7 +40,7 @@ export default function CheckoutClient() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, shipping: addr, giftWrap, promoCode: promoCode || undefined }),
+        body: JSON.stringify({ items, shipping: addr, promoCode: promoCode || undefined }),
       })
       const data = await res.json()
       if (data.url) {
@@ -111,8 +111,6 @@ export default function CheckoutClient() {
             <div style={{ background: 'var(--blush)', borderRadius: 14, padding: '20px', marginBottom: 20 }}>
               <div className="summary-row"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
               <div className="summary-row"><span>Shipping</span><span style={{ color: 'var(--text-light)', fontSize: 13 }}>Selected on Stripe</span></div>
-              {giftWrap && <div className="summary-row"><span>Gift Wrap</span><span>$5.00</span></div>}
-
               <div className="summary-row"><span>Tax (8%)</span><span>{fmt(tax)}</span></div>
               <div className="summary-row total"><span>Total Due</span><span>{fmt(total)}</span></div>
             </div>

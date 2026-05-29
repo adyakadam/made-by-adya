@@ -74,9 +74,12 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   }
 
   const meta = session.metadata ?? {}
-  const items = JSON.parse(meta.items ?? '[]')
-  const shipping = JSON.parse(meta.shipping ?? '{}')
-  const giftWrap = meta.gift_wrap === 'true'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let items: any[] = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let shipping: any = {}
+  try { items = JSON.parse(meta.items ?? '[]') } catch { console.error('Failed to parse items metadata') }
+  try { shipping = JSON.parse(meta.shipping ?? '{}') } catch { console.error('Failed to parse shipping metadata') }
 
   const subtotal = session.amount_subtotal ?? 0
   const tax = session.total_details?.amount_tax ?? 0
@@ -94,7 +97,6 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     subtotal,
     tax,
     total,
-    gift_wrap: giftWrap,
     status: 'paid',
     order_number: orderNumber,
   })
@@ -106,7 +108,8 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
 
   for (const item of items) {
     // Decrement overall product stock
-    await db.rpc('decrement_stock', { product_id: item.product_id, qty: item.qty })
+    const { error: rpcError } = await db.rpc('decrement_stock', { product_id: item.product_id, qty: item.qty })
+    if (rpcError) console.error('decrement_stock RPC error:', rpcError)
     // Decrement per-color stock if a color was selected
     if (item.color) {
       await decrementColorStock(item.product_id, item.color, item.qty)
@@ -133,7 +136,6 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       subtotal,
       tax,
       total,
-      gift_wrap: giftWrap,
       shipping_address: shipping,
     }).catch((err) => console.error('Order confirmation email error:', err))
   }

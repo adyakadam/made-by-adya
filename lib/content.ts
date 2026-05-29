@@ -85,7 +85,6 @@ export const DEFAULT_CONTENT: SiteContent = {
     { q: 'How do I care for my piece?', a: 'All pieces should be washed in cold water on a gentle cycle and laid flat to dry. Avoid the dryer for crochet items. Full care instructions are on the Size Guide & Care page.' },
     { q: 'Do you ship internationally?', a: 'Yes! I ship worldwide. International shipping rates are calculated at checkout. Please note customs fees may apply depending on your country.' },
     { q: 'How do I track my order?', a: "Once your order ships, you'll receive a tracking number by email. You can also use the Track Order page on this site to enter your order number and see its status." },
-    { q: 'Do you offer gift wrapping?', a: 'Yes! You can add gift wrapping at checkout for $5. Your order will arrive in tissue paper with a ribbon and a handwritten note.' },
   ],
   custom_heading: 'Custom Orders',
   custom_sub: 'Something made exactly for you',

@@ -9,7 +9,7 @@ import type { Product } from '@/lib/types'
 function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
 export default function CartClient({ products }: { products: Product[] }) {
-  const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getTax, getTotal,
+  const { items, removeItem, updateQty, getTax, getTotal,
     getMerchandiseSubtotal, getDiscount, promoCode, promoDiscount, promoLabel, promoFreeShipping, applyPromo, removePromo } = useCart()
   const [modal, setModal] = useState<Product | null>(null)
   const [promoInput, setPromoInput] = useState('')
@@ -149,12 +149,6 @@ export default function CartClient({ products }: { products: Product[] }) {
               {promoError && <p style={{ color: '#c0392b', fontSize: 12, marginTop: 4 }}>{promoError}</p>}
             </div>
           )}
-
-          <label className="gift-wrap-row">
-            <input type="checkbox" checked={giftWrap} onChange={toggleGiftWrap} />
-            <span className="gift-wrap-label">🎁 Add gift wrapping</span>
-            <span className="gift-wrap-price">+$5</span>
-          </label>
 
           <Link href="/checkout" className="btn-primary" style={{ width: '100%', marginTop: 8, display: 'block', textAlign: 'center' }}>
             Proceed to Checkout

@@ -5,11 +5,9 @@ import { persist } from 'zustand/middleware'
 import type { CartItem } from './types'
 
 const TAX_RATE = 0.08
-const GIFT_WRAP_PRICE = 500 // cents
 
 interface CartStore {
   items: CartItem[]
-  giftWrap: boolean
   promoCode: string
   promoDiscount: number  // percentage, e.g. 30
   promoLabel: string
@@ -18,7 +16,6 @@ interface CartStore {
   addItem: (item: CartItem) => void
   removeItem: (product_id: string, size: string, color: string) => void
   updateQty: (product_id: string, size: string, color: string, qty: number) => void
-  toggleGiftWrap: () => void
   applyPromo: (code: string, discount: number, label: string, productIds?: string[], freeShipping?: boolean) => void
   removePromo: () => void
   clearCart: () => void
@@ -34,7 +31,6 @@ export const useCart = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
-      giftWrap: false,
       promoCode: '',
       promoDiscount: 0,
       promoLabel: '',
@@ -79,12 +75,10 @@ export const useCart = create<CartStore>()(
         }))
       },
 
-      toggleGiftWrap: () => set((state) => ({ giftWrap: !state.giftWrap })),
-
       applyPromo: (code, discount, label, productIds = [], freeShipping = false) => set({ promoCode: code, promoDiscount: discount, promoLabel: label, promoProductIds: productIds, promoFreeShipping: freeShipping }),
       removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [], promoFreeShipping: false }),
 
-      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [], promoFreeShipping: false }),
+      clearCart: () => set({ items: [], promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [], promoFreeShipping: false }),
 
       getCount: () => get().items.reduce((sum, i) => sum + i.qty, 0),
 
@@ -104,9 +98,8 @@ export const useCart = create<CartStore>()(
       },
 
       getSubtotal: () => {
-        const { getMerchandiseSubtotal, getDiscount, giftWrap } = get()
-        const discounted = getMerchandiseSubtotal() - getDiscount()
-        return discounted + (giftWrap ? GIFT_WRAP_PRICE : 0)
+        const { getMerchandiseSubtotal, getDiscount } = get()
+        return getMerchandiseSubtotal() - getDiscount()
       },
 
       getTax: () => Math.round(get().getSubtotal() * TAX_RATE),

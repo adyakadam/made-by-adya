@@ -38,7 +38,6 @@ create table if not exists orders (
   subtotal              integer default 0,
   tax                   integer default 0,
   total                 integer default 0,
-  gift_wrap             boolean default false,
   promo_applied         boolean default false,
   status                text default 'pending' check (status in ('pending','paid','shipped','delivered','cancelled')),
   order_number          text unique,
@@ -76,7 +75,7 @@ create table if not exists custom_orders (
   color_pref   text,
   vision       text,
   budget       text,
-  status       text default 'new' check (status in ('new','in_progress','quoted','completed')),
+  status       text default 'new' check (status in ('new','quoted','accepted','paid','in_progress','shipped','delivered','cancelled')),
   created_at   timestamptz default now()
 );
 
