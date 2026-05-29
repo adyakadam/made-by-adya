@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { stripe } from '@/lib/stripe'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, decrementColorStock } from '@/lib/supabase'
+import { sendOrderConfirmation } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -62,6 +63,27 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   }
 
   for (const item of items) {
+    // Decrement overall product stock
     await db.rpc('decrement_stock', { product_id: item.product_id, qty: item.qty })
+    // Decrement per-color stock if a color was selected
+    if (item.color) {
+      await decrementColorStock(item.product_id, item.color, item.qty)
+    }
+  }
+
+  // Send order confirmation email (non-blocking — don't let email failure break webhook)
+  const customerEmail = session.customer_email ?? shipping.email
+  if (customerEmail) {
+    await sendOrderConfirmation({
+      customer_email: customerEmail,
+      customer_name: `${shipping.first_name ?? ''} ${shipping.last_name ?? ''}`.trim(),
+      order_number: orderNumber,
+      items,
+      subtotal,
+      tax,
+      total,
+      gift_wrap: giftWrap,
+      shipping_address: shipping,
+    }).catch((err) => console.error('Order confirmation email error:', err))
   }
 }

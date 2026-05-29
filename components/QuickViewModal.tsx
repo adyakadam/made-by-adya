@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import type { Product } from '@/lib/types'
 import { useCart } from '@/lib/cart-store'
 import { showToast } from './Toast'
 import VariantWhisper from './VariantWhisper'
 import HesitationNudge from './HesitationNudge'
+import NotifyStock from './NotifyStock'
+import { trackView } from './RecentlyViewed'
 
 interface Props {
   product: Product | null
@@ -39,6 +41,8 @@ export default function QuickViewModal({ product, onClose }: Props) {
   const [selectedSize, setSelectedSize] = useState('')
   const [selectedColor, setSelectedColor] = useState('')
   const [imgIndex, setImgIndex] = useState(0)
+
+  useEffect(() => { if (product) trackView(product.id) }, [product?.id])
 
   if (!product) return null
 
@@ -157,7 +161,12 @@ export default function QuickViewModal({ product, onClose }: Props) {
           {(() => {
             const colorQty = selectedColor ? product.color_stock?.[selectedColor] : undefined
             const qty = colorQty !== undefined ? colorQty : product.stock
-            if (qty === 0) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Out of stock{selectedColor ? ' in this color' : ''}</div>
+            if (qty === 0) return (
+              <>
+                <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 12 }}>Out of stock{selectedColor ? ' in this color' : ''}</div>
+                <NotifyStock productId={product.id} productName={product.name} />
+              </>
+            )
             if (qty <= 3) return <div style={{ color: '#c0392b', fontSize: 13, marginBottom: 16 }}>Only {qty} left{selectedColor ? ' in this color' : ''}!</div>
             return null
           })()}

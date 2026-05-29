@@ -1,8 +1,32 @@
 import Link from 'next/link'
 import { getInstagramTiles, getHeroImageUrl, getSiteContent } from '@/lib/supabase'
 import NewsletterForm from '@/components/NewsletterForm'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+const BASE_URL = 'https://madebyadya.com'
+
+export async function generateMetadata(): Promise<Metadata> {
+  const heroUrl = await getHeroImageUrl()
+  const ogImage = heroUrl || undefined
+  return {
+    title: 'Made by Adya — Handcrafted Crochet & Sewn Clothing',
+    description:
+      'Shop handcrafted crochet tops, cardigans, hand-sewn dresses, and one-of-a-kind sets made with love. Slow fashion, made by hand, one stitch at a time.',
+    openGraph: {
+      title: 'Made by Adya — Handcrafted Crochet & Sewn Clothing',
+      description:
+        'Shop handcrafted crochet tops, cardigans, hand-sewn dresses, and one-of-a-kind sets made with love.',
+      url: BASE_URL,
+      ...(ogImage && { images: [{ url: ogImage, width: 1200, height: 630, alt: 'Made by Adya' }] }),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      ...(ogImage && { images: [ogImage] }),
+    },
+  }
+}
 
 const FALLBACK_TILES = [
   { image_url: '', link_url: 'https://instagram.com/madebyadya', color: '#f2d9d0', emoji: '🌸' },

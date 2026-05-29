@@ -49,6 +49,35 @@ function mergeColorStocks(products: Product[], stocks: Record<string, Record<str
   return products.map((p) => ({ ...p, color_stock: stocks[p.id] ?? p.color_stock ?? {} }))
 }
 
+export async function decrementColorStock(productId: string, color: string, qty: number): Promise<void> {
+  try {
+    const db = getSupabaseAdmin()
+    if (!db) return
+    const stocks = await getColorStocks()
+    const productStock = stocks[productId]
+    if (!productStock || !(color in productStock)) return
+    productStock[color] = Math.max(0, (productStock[color] ?? 0) - qty)
+    stocks[productId] = productStock
+    await db.from('settings').upsert({ key: 'color_stocks', value: stocks })
+    // Keep product.stock in sync as the sum of all color stocks
+    const newTotal = Object.values(productStock).reduce((sum, n) => sum + n, 0)
+    await db.from('products').update({ stock: newTotal }).eq('id', productId)
+  } catch (e) {
+    console.error('decrementColorStock error:', e)
+  }
+}
+
+/** Recalculate product.stock as sum of color_stock values and save both. */
+export async function syncStockFromColors(productId: string, colorStock: Record<string, number>): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) return
+  const total = Object.values(colorStock).reduce((sum, n) => sum + n, 0)
+  await Promise.all([
+    saveColorStock(productId, colorStock),
+    db.from('products').update({ stock: total }).eq('id', productId),
+  ])
+}
+
 export async function getProducts(): Promise<Product[]> {
   const [{ data, error }, stocks] = await Promise.all([
     getSupabase().from('products').select('*').eq('active', true).order('created_at', { ascending: false }),
@@ -69,13 +98,13 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 // ── Reviews ───────────────────────────────────────────────────────────────────
 
-export async function getReviews(limit = 6): Promise<Review[]> {
+export async function getReviews(limit = 6, orderBy: 'created_at' | 'rating' = 'created_at'): Promise<Review[]> {
   try {
     const db = getSupabaseAdmin() ?? getSupabase()
     const { data, error } = await db
       .from('reviews')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order(orderBy, { ascending: false })
       .limit(limit)
     if (error) throw error
     return data ?? []
@@ -129,6 +158,12 @@ export async function adminUpsertProduct(product: Partial<Product> & { id?: stri
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
   const { color_stock, ...rest } = product
+
+  // Auto-calculate total stock as sum of color stocks when color stocks are provided
+  if (color_stock && Object.keys(color_stock).length > 0) {
+    rest.stock = Object.values(color_stock).reduce((sum, n) => sum + n, 0)
+  }
+
   console.log('upsert payload keys:', Object.keys(rest))
   const { data, error } = await db.from('products').upsert(rest).select().single()
   if (error) throw new Error(`Supabase error: ${error.message} (code: ${error.code})`)
@@ -136,6 +171,13 @@ export async function adminUpsertProduct(product: Partial<Product> & { id?: stri
     await saveColorStock(data.id, color_stock)
   }
   return { ...data, color_stock }
+}
+
+export async function adminGetOrderById(id: string): Promise<Order | null> {
+  const db = getSupabaseAdmin()
+  if (!db) return null
+  const { data } = await db.from('orders').select('*').eq('id', id).single()
+  return data ?? null
 }
 
 export async function adminUpdateOrderStatus(id: string, status: Order['status'], trackingNumber?: string): Promise<void> {
@@ -237,10 +279,20 @@ export async function saveSiteContent(content: SiteContent): Promise<void> {
   await db.from('settings').upsert({ key: 'site_content', value: content })
 }
 
-export interface PromoCode { code: string; discount: number; label: string; active: boolean; product_ids: string[] }
+export interface PromoCode {
+  code: string
+  discount: number
+  label: string
+  active: boolean
+  product_ids: string[]
+  free_shipping?: boolean  // if true, adds $0 shipping option at checkout
+  expires_at?: string      // ISO date string, optional — no expiry if absent
+  max_uses?: number        // optional — unlimited if absent
+  use_count: number        // defaults to 0
+}
 
 const DEFAULT_PROMOS: PromoCode[] = [
-  { code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true, product_ids: [] },
+  { code: 'FAMILY30', discount: 30, label: 'Friends & Family', active: true, product_ids: [], use_count: 0 },
 ]
 
 export async function getPromoCodes(): Promise<PromoCode[]> {
@@ -255,6 +307,99 @@ export async function savePromoCodes(codes: PromoCode[]): Promise<void> {
   const db = getSupabaseAdmin()
   if (!db) throw new Error('Service role key not configured')
   await db.from('settings').upsert({ key: 'promo_codes', value: codes })
+}
+
+export interface StockNotification { email: string; product_id: string; product_name: string; created_at: string }
+
+export async function getStockNotifications(): Promise<StockNotification[]> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'stock_notifications').single()
+    return (data?.value as StockNotification[]) ?? []
+  } catch { return [] }
+}
+
+export async function addStockNotification(n: Omit<StockNotification, 'created_at'>): Promise<void> {
+  const db = getSupabaseAdmin() ?? getSupabase()
+  const existing = await getStockNotifications()
+  if (existing.find((e) => e.email === n.email && e.product_id === n.product_id)) return
+  await db.from('settings').upsert({ key: 'stock_notifications', value: [...existing, { ...n, created_at: new Date().toISOString() }] })
+}
+
+export async function deleteStockNotificationsByProduct(product_name: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  const existing = await getStockNotifications()
+  const filtered = existing.filter((n) => n.product_name !== product_name)
+  await db.from('settings').upsert({ key: 'stock_notifications', value: filtered })
+}
+
+export interface NewsletterSubscriber { email: string; created_at: string }
+
+export async function getNewsletterSubscribers(): Promise<NewsletterSubscriber[]> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'newsletter_subscribers').single()
+    return (data?.value as NewsletterSubscriber[]) ?? []
+  } catch { return [] }
+}
+
+export async function addNewsletterSubscriber(email: string): Promise<void> {
+  const db = getSupabaseAdmin() ?? getSupabase()
+  const existing = await getNewsletterSubscribers()
+  if (existing.find((s) => s.email === email)) return
+  await db.from('settings').upsert({ key: 'newsletter_subscribers', value: [...existing, { email, created_at: new Date().toISOString() }] })
+}
+
+export interface CustomOrderExtra { admin_notes: string; quote_amount: string; reference_images?: string[]; estimated_time?: string; tracking_number?: string }
+
+export async function getCustomOrderExtras(): Promise<Record<string, CustomOrderExtra>> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', 'custom_order_extras').single()
+    return (data?.value as Record<string, CustomOrderExtra>) ?? {}
+  } catch { return {} }
+}
+
+export async function saveCustomOrderExtra(id: string, extra: CustomOrderExtra): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  const extras = await getCustomOrderExtras()
+  extras[id] = extra
+  await db.from('settings').upsert({ key: 'custom_order_extras', value: extras })
+}
+
+// ─── Review Tokens ───────────────────────────────────────────────────────────
+export interface ReviewToken {
+  order_number: string
+  customer_name: string
+  customer_email: string
+  items: { product_id: string; name: string }[]
+  used: boolean
+  created_at: string
+}
+
+export async function saveReviewToken(token: string, data: Omit<ReviewToken, 'used' | 'created_at'>): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  const payload: ReviewToken = { ...data, used: false, created_at: new Date().toISOString() }
+  await db.from('settings').upsert({ key: `review_token_${token}`, value: payload })
+}
+
+export async function getReviewToken(token: string): Promise<ReviewToken | null> {
+  try {
+    const db = getSupabaseAdmin() ?? getSupabase()
+    const { data } = await db.from('settings').select('value').eq('key', `review_token_${token}`).single()
+    return (data?.value as ReviewToken) ?? null
+  } catch { return null }
+}
+
+export async function markReviewTokenUsed(token: string): Promise<void> {
+  const db = getSupabaseAdmin()
+  if (!db) throw new Error('Service role key not configured')
+  const existing = await getReviewToken(token)
+  if (!existing) return
+  await db.from('settings').upsert({ key: `review_token_${token}`, value: { ...existing, used: true } })
 }
 
 export async function adminGetCustomOrders(): Promise<CustomOrderRequest[]> {

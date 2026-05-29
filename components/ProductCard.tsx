@@ -1,7 +1,10 @@
 'use client'
 
+import Link from 'next/link'
 import type { Product } from '@/lib/types'
 import CustomBadge from './CustomBadge'
+import { trackView } from './RecentlyViewed'
+import WishlistButton from './WishlistButton'
 
 interface Props {
   product: Product
@@ -19,7 +22,7 @@ function fmt(cents: number) {
 
 export default function ProductCard({ product, onOpen, showCustomBadge }: Props) {
   return (
-    <div className="product-card" data-id={product.id} onClick={() => onOpen(product)}>
+    <Link href={`/shop/${product.id}`} className="product-card" data-id={product.id} onClick={() => trackView(product.id)}>
       <div className="product-img" style={{ background: product.bg_color }}>
         {product.images?.[0]
           ? <img src={product.images[0]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit', position: 'absolute', inset: 0 }} />
@@ -30,6 +33,7 @@ export default function ProductCard({ product, onOpen, showCustomBadge }: Props)
           </div>
         )}
         {showCustomBadge && <CustomBadge />}
+        <WishlistButton productId={product.id} productName={product.name} className="wishlist-btn-card" />
         <div className="product-badges">
           <span className={`product-badge ${product.badge.toLowerCase().replace(' ', '-')}`}>{product.badge}</span>
           {product.is_new && <span className="product-badge new">New</span>}
@@ -40,7 +44,7 @@ export default function ProductCard({ product, onOpen, showCustomBadge }: Props)
         </div>
       </div>
       <div className="product-info">
-        <div className="product-name">{product.name}</div>
+        <div className="product-name-link">{product.name}</div>
         <div className="product-desc">{product.description}</div>
         <div className="star-row">
           <span className="stars">{stars(product.rating)}</span>
@@ -58,12 +62,12 @@ export default function ProductCard({ product, onOpen, showCustomBadge }: Props)
           <button
             className="add-to-cart"
             disabled={product.stock === 0}
-            onClick={(e) => { e.stopPropagation(); onOpen(product) }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onOpen(product) }}
           >
             {product.stock === 0 ? 'Sold Out' : 'Quick View'}
           </button>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }

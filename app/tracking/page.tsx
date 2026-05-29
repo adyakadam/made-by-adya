@@ -1,4 +1,18 @@
 import TrackingForm from './TrackingForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Track Your Order',
+  description:
+    'Track the status of your Made by Adya order. Enter your order number to check shipping status and get updates.',
+  openGraph: {
+    title: 'Track Your Order — Made by Adya',
+    description:
+      'Enter your order number to check shipping status and get updates.',
+    url: 'https://made-by-adya-9naj.vercel.app/tracking',
+  },
+  robots: { index: false },
+}
 
 export default function TrackingPage() {
   return (

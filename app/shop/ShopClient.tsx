@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import type { Product, ProductCategory, SortOption } from '@/lib/types'
 import ProductCard from '@/components/ProductCard'
 import QuickViewModal from '@/components/QuickViewModal'
+import RecentlyViewed from '@/components/RecentlyViewed'
 
 
 const CATEGORIES: { label: string; value: ProductCategory }[] = [
@@ -96,6 +97,7 @@ export default function ShopClient({ products }: { products: Product[] }) {
       )}
 
       {modal && <QuickViewModal product={modal} onClose={() => setModal(null)} />}
+      <RecentlyViewed products={products} />
     </>
   )
 }

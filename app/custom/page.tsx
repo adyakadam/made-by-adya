@@ -1,8 +1,21 @@
 import CustomForm from './CustomForm'
 import WaitlistForm from './WaitlistForm'
 import { getSiteContent, getCustomPhotos } from '@/lib/supabase'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Custom Orders',
+  description:
+    'Request a one-of-a-kind custom piece from Made by Adya — crochet tops, cardigans, sets, hand-sewn dresses, and more, made exactly to your vision and measurements.',
+  openGraph: {
+    title: 'Custom Orders — Made by Adya',
+    description:
+      'Request a custom crochet or sewn piece made exactly to your vision and measurements.',
+    url: 'https://made-by-adya-9naj.vercel.app/custom',
+  },
+}
 
 export default async function CustomPage() {
   const [c, customPhotos] = await Promise.all([getSiteContent(), getCustomPhotos()])

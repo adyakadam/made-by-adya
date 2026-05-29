@@ -1,11 +1,25 @@
 import { NextRequest } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { supabaseAdmin, getCustomOrderExtras, saveCustomOrderExtra } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
+  const { reference_images, ...orderFields } = body
+
   const db = supabaseAdmin()
   if (db) {
-    try { await db.from('custom_orders').insert({ ...body, status: 'new' }).throwOnError() } catch { /* ignore */ }
+    try {
+      const { data } = await db
+        .from('custom_orders')
+        .insert({ ...orderFields, status: 'new' })
+        .select('id')
+        .single()
+
+      if (data?.id && Array.isArray(reference_images) && reference_images.length > 0) {
+        const extras = await getCustomOrderExtras()
+        const existing = extras[data.id] ?? { admin_notes: '', quote_amount: '' }
+        await saveCustomOrderExtra(data.id, { ...existing, reference_images })
+      }
+    } catch { /* ignore */ }
   }
   return Response.json({ ok: true })
 }

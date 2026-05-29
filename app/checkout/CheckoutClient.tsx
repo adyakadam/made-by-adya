@@ -46,7 +46,7 @@ export default function CheckoutClient() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        showToast('Something went wrong. Please try again.')
+        showToast(data.error ?? 'Something went wrong. Please try again.')
       }
     } catch {
       showToast('Something went wrong. Please try again.')

@@ -14,11 +14,12 @@ interface CartStore {
   promoDiscount: number  // percentage, e.g. 30
   promoLabel: string
   promoProductIds: string[]  // empty = all products
+  promoFreeShipping: boolean
   addItem: (item: CartItem) => void
   removeItem: (product_id: string, size: string, color: string) => void
   updateQty: (product_id: string, size: string, color: string, qty: number) => void
   toggleGiftWrap: () => void
-  applyPromo: (code: string, discount: number, label: string, productIds?: string[]) => void
+  applyPromo: (code: string, discount: number, label: string, productIds?: string[], freeShipping?: boolean) => void
   removePromo: () => void
   clearCart: () => void
   getCount: () => number
@@ -38,6 +39,7 @@ export const useCart = create<CartStore>()(
       promoDiscount: 0,
       promoLabel: '',
       promoProductIds: [],
+      promoFreeShipping: false,
 
       addItem: (incoming) => {
         set((state) => {
@@ -79,10 +81,10 @@ export const useCart = create<CartStore>()(
 
       toggleGiftWrap: () => set((state) => ({ giftWrap: !state.giftWrap })),
 
-      applyPromo: (code, discount, label, productIds = []) => set({ promoCode: code, promoDiscount: discount, promoLabel: label, promoProductIds: productIds }),
-      removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [] }),
+      applyPromo: (code, discount, label, productIds = [], freeShipping = false) => set({ promoCode: code, promoDiscount: discount, promoLabel: label, promoProductIds: productIds, promoFreeShipping: freeShipping }),
+      removePromo: () => set({ promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [], promoFreeShipping: false }),
 
-      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [] }),
+      clearCart: () => set({ items: [], giftWrap: false, promoCode: '', promoDiscount: 0, promoLabel: '', promoProductIds: [], promoFreeShipping: false }),
 
       getCount: () => get().items.reduce((sum, i) => sum + i.qty, 0),
 

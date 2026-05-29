@@ -11,7 +11,7 @@ export default function ReviewCard({ review }: { review: Review }) {
         <div className="review-avatar">{review.avatar_letter}</div>
         <div>
           <div className="review-name">{review.reviewer_name}</div>
-          <div className="review-date">{review.created_at}</div>
+          <div className="review-date">{new Date(review.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
         </div>
       </div>
       <div className="review-stars">{stars(review.rating)}</div>

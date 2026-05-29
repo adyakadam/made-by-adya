@@ -10,7 +10,7 @@ function fmt(cents: number) { return `$${(cents / 100).toFixed(2)}` }
 
 export default function CartClient({ products }: { products: Product[] }) {
   const { items, giftWrap, removeItem, updateQty, toggleGiftWrap, getTax, getTotal,
-    getMerchandiseSubtotal, getDiscount, promoCode, promoDiscount, promoLabel, applyPromo, removePromo } = useCart()
+    getMerchandiseSubtotal, getDiscount, promoCode, promoDiscount, promoLabel, promoFreeShipping, applyPromo, removePromo } = useCart()
   const [modal, setModal] = useState<Product | null>(null)
   const [promoInput, setPromoInput] = useState('')
   const [promoError, setPromoError] = useState('')
@@ -30,7 +30,7 @@ export default function CartClient({ products }: { products: Product[] }) {
       const res = await fetch(`/api/validate-promo?code=${encodeURIComponent(code)}`)
       const data = await res.json()
       if (data.valid) {
-        applyPromo(code, data.discount, data.label, data.product_ids ?? [])
+        applyPromo(code, data.discount, data.label, data.product_ids ?? [], data.free_shipping ?? false)
         setPromoInput('')
       } else {
         setPromoError('Invalid or inactive code.')
@@ -97,14 +97,38 @@ export default function CartClient({ products }: { products: Product[] }) {
               <span>−{fmt(discount)}</span>
             </div>
           )}
-          <div className="summary-row"><span>Shipping</span><span style={{ color: 'var(--text-light)', fontSize: 13 }}>Calculated at checkout</span></div>
+          {promoFreeShipping && (
+            <div className="summary-row" style={{ color: '#27ae60' }}>
+              <span>🚚 Free Shipping ({promoCode})</span>
+              <span>−$5.99</span>
+            </div>
+          )}
+          {!promoFreeShipping ? (
+            <details style={{ marginBottom: 4 }}>
+              <summary style={{ fontSize: 13, color: 'var(--text-mid)', cursor: 'pointer', listStyle: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Shipping</span>
+                <span style={{ color: 'var(--text-light)', fontSize: 13 }}>from $5.99 ▾</span>
+              </summary>
+              <div style={{ marginTop: 8, padding: '10px 12px', background: 'var(--cream)', borderRadius: 10, fontSize: 12, color: 'var(--text-mid)', lineHeight: 2 }}>
+                <div>📦 First Class — $5.99 · 3–7 days</div>
+                <div>📦 Priority Mail — $9.99 · 1–3 days</div>
+                <div>📦 Priority Express — $29.99 · overnight</div>
+                <div style={{ color: 'var(--text-light)', marginTop: 4, fontSize: 11 }}>Exact rate calculated at checkout based on your location.</div>
+              </div>
+            </details>
+          ) : (
+            <div className="summary-row" style={{ fontSize: 13, color: 'var(--text-mid)', marginBottom: 4 }}>
+              <span>Shipping</span>
+              <span style={{ color: '#27ae60', fontWeight: 500 }}>Free</span>
+            </div>
+          )}
           <div className="summary-row"><span>Tax (8%)</span><span>{fmt(tax)}</span></div>
           <div className="summary-row total"><span>Total</span><span>{fmt(total)}</span></div>
 
           {/* Promo code */}
           {promoCode ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eafaf1', border: '1.5px solid #27ae60', borderRadius: 10, padding: '8px 14px', marginBottom: 12, fontSize: 13 }}>
-              <span style={{ color: '#27ae60', fontWeight: 500 }}>✓ {promoCode} applied</span>
+              <span style={{ color: '#27ae60', fontWeight: 500 }}>✓ {promoCode} applied{promoFreeShipping ? ' · Free shipping!' : ''}{promoDiscount > 0 ? ` · ${promoDiscount}% off` : ''}</span>
               <button onClick={removePromo} style={{ background: 'none', border: 'none', color: '#c0392b', cursor: 'pointer', fontSize: 13 }}>Remove</button>
             </div>
           ) : (

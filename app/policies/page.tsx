@@ -1,4 +1,17 @@
 import ContactForm from './ContactForm'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Policies & Contact',
+  description:
+    'Read the Made by Adya shipping, returns, privacy, and small-batch policies. Get in touch via our contact form for questions or support.',
+  openGraph: {
+    title: 'Policies & Contact — Made by Adya',
+    description:
+      'Shipping, returns, privacy policies, and contact form.',
+    url: 'https://made-by-adya-9naj.vercel.app/policies',
+  },
+}
 
 export default function PoliciesPage() {
   return (

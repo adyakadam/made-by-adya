@@ -91,7 +91,7 @@ export interface CustomOrderRequest {
   color_pref: string
   vision: string
   budget: string
-  status: 'new' | 'in_progress' | 'quoted' | 'completed'
+  status: 'new' | 'quoted' | 'accepted' | 'in_progress' | 'shipped' | 'delivered' | 'cancelled'
   created_at: string
 }
 

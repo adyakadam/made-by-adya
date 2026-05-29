@@ -1,4 +1,17 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Size Guide',
+  description:
+    'Find your perfect fit with the Made by Adya size guide. Measurements in inches for XS–XL, plus care instructions for crochet and hand-sewn pieces.',
+  openGraph: {
+    title: 'Size Guide — Made by Adya',
+    description:
+      'Find your perfect fit. Measurements in inches for XS–XL, plus care instructions.',
+    url: 'https://made-by-adya-9naj.vercel.app/size-guide',
+  },
+}
 
 export default function SizeGuidePage() {
   return (

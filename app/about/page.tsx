@@ -1,8 +1,21 @@
 import Link from 'next/link'
 import { getSiteContent, getAboutMedia } from '@/lib/supabase'
 import AboutMedia from '@/components/AboutMedia'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'About',
+  description:
+    'Meet Adya — the maker behind Made by Adya. Every crochet and sewn piece is crafted by hand with love, care, and a passion for slow, sustainable fashion.',
+  openGraph: {
+    title: 'About — Made by Adya',
+    description:
+      'Meet Adya — the maker behind Made by Adya. Handcrafted crochet and sewn clothing made with love.',
+    url: 'https://made-by-adya-9naj.vercel.app/about',
+  },
+}
 
 export default async function AboutPage() {
   const [c, aboutMedia] = await Promise.all([getSiteContent(), getAboutMedia()])
@@ -10,7 +23,7 @@ export default async function AboutPage() {
     <>
       <div className="about-hero">
         <div className="about-left">
-          <h1>Hi, I'm <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>Adya</em></h1>
+          <h1>Hi, I'm <em style={{ color: 'var(--accent)', fontStyle: 'italic' }}>adya</em></h1>
           <p>{c.about_intro_1}</p>
           <br />
           <p>{c.about_intro_2}</p>

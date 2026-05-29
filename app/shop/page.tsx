@@ -3,8 +3,21 @@ import { getProducts, getReviews } from '@/lib/supabase'
 import ReviewCard from '@/components/ReviewCard'
 import { SEED_PRODUCTS } from '@/lib/seed-data'
 import ShopClient from './ShopClient'
+import type { Metadata } from 'next'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Shop',
+  description:
+    'Browse the full Made by Adya collection — handcrafted crochet tops, cardigans, sets, hand-sewn dresses, skirts, and accessories. Each piece is made entirely by hand.',
+  openGraph: {
+    title: 'Shop — Made by Adya',
+    description:
+      'Browse handcrafted crochet and sewn clothing — each piece made entirely by hand.',
+    url: 'https://made-by-adya-9naj.vercel.app/shop',
+  },
+}
 
 export default async function ShopPage() {
   let products = SEED_PRODUCTS
@@ -15,7 +28,7 @@ export default async function ShopPage() {
     // fall back to seed
   }
 
-  const reviews = await getReviews(6)
+  const reviews = await getReviews(6, 'rating')
 
   return (
     <>
