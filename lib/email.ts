@@ -681,3 +681,96 @@ export async function sendAdminCustomOrderPaid(order: {
   })
   if (error) console.error('Failed to send admin custom order paid email:', error)
 }
+
+// ─── Admin: New Shop Order Notification ──────────────────────────────────────
+export async function sendAdminNewOrder(order: {
+  order_number: string
+  customer_name: string
+  customer_email: string
+  total: number // in cents
+  items: { name: string; qty: number; size?: string; color?: string }[]
+}): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'adyakadam@berkeley.edu'
+  const formattedTotal = `$${(order.total / 100).toFixed(2)}`
+
+  const itemRows = order.items.map((i) =>
+    `<tr><td style="font-size:13px;color:${C.text};padding:4px 0;">${i.name}${i.size ? ` (${i.size})` : ''}${i.color ? ` [${i.color}]` : ''}</td><td style="font-size:13px;color:${C.textMid};padding:4px 0;text-align:right;">x${i.qty}</td></tr>`
+  ).join('')
+
+  const body = `
+    <p style="font-size:14px;color:${C.textMid};margin:0 0 20px;line-height:1.6;">
+      You have a new shop order!
+    </p>
+
+    <div style="background:${C.blush};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1.5px solid ${C.border};">
+      <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:12px;">
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Order</td><td style="font-size:13px;color:${C.text};font-weight:500;">${order.order_number}</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Customer</td><td style="font-size:13px;color:${C.text};">${order.customer_name} (${order.customer_email})</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Total</td><td style="font-size:15px;color:${C.accentDark};font-weight:500;">${formattedTotal}</td></tr>
+      </table>
+      <table cellpadding="0" cellspacing="0" width="100%">
+        ${itemRows}
+      </table>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${BASE_URL}/admin" style="display:inline-block;background:${C.accent};color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;">
+        View in Admin →
+      </a>
+    </div>
+  `
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `New order ${order.order_number} — ${order.customer_name} — ${formattedTotal}`,
+    html: layout(body),
+  })
+  if (error) console.error('Failed to send admin new order email:', error)
+}
+
+// ─── Admin: New Custom Order Request Notification ────────────────────────────
+export async function sendAdminNewCustomOrder(order: {
+  customer_name: string
+  customer_email: string
+  piece_type: string
+  budget: string
+  vision: string
+}): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'adyakadam@berkeley.edu'
+
+  const body = `
+    <p style="font-size:14px;color:${C.textMid};margin:0 0 20px;line-height:1.6;">
+      You have a new custom order request!
+    </p>
+
+    <div style="background:${C.blush};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1.5px solid ${C.border};">
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Customer</td><td style="font-size:13px;color:${C.text};font-weight:500;">${order.customer_name} (${order.customer_email})</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Piece</td><td style="font-size:13px;color:${C.text};">${order.piece_type}</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:6px;">Budget</td><td style="font-size:13px;color:${C.text};">${order.budget}</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-top:8px;vertical-align:top;">Vision</td><td style="font-size:13px;color:${C.text};padding-top:8px;line-height:1.6;">${order.vision}</td></tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${BASE_URL}/admin" style="display:inline-block;background:${C.accent};color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;">
+        View in Admin →
+      </a>
+    </div>
+  `
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `New custom order request — ${order.customer_name} — ${order.piece_type}`,
+    html: layout(body),
+  })
+  if (error) console.error('Failed to send admin new custom order email:', error)
+}

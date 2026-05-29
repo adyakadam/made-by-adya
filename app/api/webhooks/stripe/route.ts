@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin, decrementColorStock } from '@/lib/supabase'
-import { sendOrderConfirmation, sendCustomOrderPaymentConfirmation, sendAdminCustomOrderPaid } from '@/lib/email'
+import { sendOrderConfirmation, sendCustomOrderPaymentConfirmation, sendAdminCustomOrderPaid, sendAdminNewOrder } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -112,6 +112,15 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       await decrementColorStock(item.product_id, item.color, item.qty)
     }
   }
+
+  // Notify admin of new order
+  sendAdminNewOrder({
+    order_number: orderNumber,
+    customer_name: `${shipping.first_name ?? ''} ${shipping.last_name ?? ''}`.trim(),
+    customer_email: session.customer_email ?? shipping.email,
+    total,
+    items,
+  }).catch((err) => console.error('Admin new order email error:', err))
 
   // Send order confirmation email (non-blocking — don't let email failure break webhook)
   const customerEmail = session.customer_email ?? shipping.email

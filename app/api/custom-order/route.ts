@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin, getCustomOrderExtras, saveCustomOrderExtra } from '@/lib/supabase'
+import { sendAdminNewCustomOrder } from '@/lib/email'
 
 export async function POST(req: NextRequest) {
   const body = await req.json()
@@ -20,6 +21,15 @@ export async function POST(req: NextRequest) {
         await saveCustomOrderExtra(data.id, { ...existing, reference_images })
       }
     } catch { /* ignore */ }
+
+    // Notify admin of new custom order request
+    sendAdminNewCustomOrder({
+      customer_name: orderFields.name,
+      customer_email: orderFields.email,
+      piece_type: orderFields.piece_type,
+      budget: orderFields.budget,
+      vision: orderFields.vision,
+    }).catch((e) => console.error('Admin new custom order email error:', e))
   }
   return Response.json({ ok: true })
 }
