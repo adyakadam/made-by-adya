@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Policies & Contact — Made by Adya',
     description:
       'Shipping, returns, privacy policies, and contact form.',
-    url: 'https://made-by-adya-9naj.vercel.app/policies',
+    url: 'https://madebyadya.com/policies',
   },
 }
 

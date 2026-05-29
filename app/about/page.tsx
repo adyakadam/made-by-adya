@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: 'About — Made by Adya',
     description:
       'Meet Adya — the maker behind Made by Adya. Handcrafted crochet and sewn clothing made with love.',
-    url: 'https://made-by-adya-9naj.vercel.app/about',
+    url: 'https://madebyadya.com/about',
   },
 }
 

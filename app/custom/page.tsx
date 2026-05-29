@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: 'Custom Orders — Made by Adya',
     description:
       'Request a custom crochet or sewn piece made exactly to your vision and measurements.',
-    url: 'https://made-by-adya-9naj.vercel.app/custom',
+    url: 'https://madebyadya.com/custom',
   },
 }
 

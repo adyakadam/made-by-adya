@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     title: 'FAQ — Made by Adya',
     description:
       'Find answers about shipping, sizing, custom orders, care instructions, returns, and more.',
-    url: 'https://made-by-adya-9naj.vercel.app/faq',
+    url: 'https://madebyadya.com/faq',
   },
 }
 

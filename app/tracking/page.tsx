@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Track Your Order — Made by Adya',
     description:
       'Enter your order number to check shipping status and get updates.',
-    url: 'https://made-by-adya-9naj.vercel.app/tracking',
+    url: 'https://madebyadya.com/tracking',
   },
   robots: { index: false },
 }

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Wishlist — Made by Adya',
     description: 'Your saved Made by Adya pieces.',
-    url: 'https://made-by-adya-9naj.vercel.app/wishlist',
+    url: 'https://madebyadya.com/wishlist',
   },
   robots: { index: false },
 }

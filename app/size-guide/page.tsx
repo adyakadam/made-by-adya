@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     title: 'Size Guide — Made by Adya',
     description:
       'Find your perfect fit. Measurements in inches for XS–XL, plus care instructions.',
-    url: 'https://made-by-adya-9naj.vercel.app/size-guide',
+    url: 'https://madebyadya.com/size-guide',
   },
 }
 
