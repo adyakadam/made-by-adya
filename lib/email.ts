@@ -563,6 +563,15 @@ export async function sendCustomOrderPaymentRequest(order: {
       </a>
     </div>
 
+    <div style="padding:16px 20px;background:${C.blush};border-radius:10px;border:1.5px solid ${C.border};margin-bottom:20px;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:600;color:${C.accentDark};">Prefer to pay another way?</p>
+      <p style="margin:0 0 4px;font-size:13px;color:${C.textMid};"><strong>Venmo:</strong> @heyadya</p>
+      <p style="margin:0 0 12px;font-size:13px;color:${C.textMid};"><strong>Zelle:</strong> 510-980-3566</p>
+      <p style="margin:0;font-size:12px;color:${C.textLight};line-height:1.6;">
+        Just send the payment and reply to this email so I can confirm.
+      </p>
+    </div>
+
     <div style="padding:16px 20px;background:${C.blush};border-radius:10px;border-left:3px solid ${C.accent};">
       <p style="margin:0;font-size:13px;color:${C.textMid};line-height:1.7;">
         ${order.payment_type === 'deposit'
