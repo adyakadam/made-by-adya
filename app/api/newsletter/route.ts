@@ -1,7 +1,11 @@
 import { NextRequest } from 'next/server'
 import { addNewsletterSubscriber } from '@/lib/supabase'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(getIp(req), 5, 60_000)) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 })
+  }
   try {
     const { email } = await req.json()
     if (!email || !email.includes('@')) {

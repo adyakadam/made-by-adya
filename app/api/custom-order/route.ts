@@ -1,8 +1,12 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin, getCustomOrderExtras, saveCustomOrderExtra } from '@/lib/supabase'
 import { sendAdminNewCustomOrder } from '@/lib/email'
+import { rateLimit, getIp } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
+  if (!rateLimit(getIp(req), 3, 60_000)) {
+    return Response.json({ error: 'Too many requests' }, { status: 429 })
+  }
   const body = await req.json()
   const { reference_images, ...orderFields } = body
 

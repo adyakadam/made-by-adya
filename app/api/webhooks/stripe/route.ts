@@ -81,6 +81,10 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   try { items = JSON.parse(meta.items ?? '[]') } catch { console.error('Failed to parse items metadata') }
   try { shipping = JSON.parse(meta.shipping ?? '{}') } catch { console.error('Failed to parse shipping metadata') }
 
+  // Idempotency check — ignore duplicate webhook deliveries
+  const { data: existing } = await db.from('orders').select('id').eq('stripe_session_id', session.id).single()
+  if (existing) { console.log('Duplicate webhook for session', session.id, '— skipping'); return }
+
   const subtotal = session.amount_subtotal ?? 0
   const tax = session.total_details?.amount_tax ?? 0
   const total = session.amount_total ?? 0

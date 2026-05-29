@@ -1587,16 +1587,43 @@ export default function AdminDashboard() {
           const lastMonthYear = thisMonth === 0 ? thisYear - 1 : thisYear
 
           const paidOrders = orders.filter((o) => o.status !== 'cancelled')
-          const totalRevenue = paidOrders.reduce((s, o) => s + o.total, 0)
+          const shopRevenue = paidOrders.reduce((s, o) => s + o.total, 0)
+
+          // Custom order revenue — sum quote_amount for paid custom orders (stored as dollars, convert to cents)
+          const paidCustomOrders = customOrders.filter((o) => o.status === 'paid')
+          const customRevenue = paidCustomOrders.reduce((s, o) => {
+            const extra = customOrderExtras[o.id]
+            const amount = extra?.quote_amount ? parseFloat(extra.quote_amount.replace(/[^0-9.]/g, '')) : 0
+            return s + (isNaN(amount) ? 0 : Math.round(amount * 100))
+          }, 0)
+          const totalRevenue = shopRevenue + customRevenue
+
           const revenueThisMonth = paidOrders.filter((o) => {
             const d = new Date(o.created_at)
             return d.getMonth() === thisMonth && d.getFullYear() === thisYear
-          }).reduce((s, o) => s + o.total, 0)
+          }).reduce((s, o) => s + o.total, 0) + paidCustomOrders.filter((o) => {
+            const d = new Date(o.created_at)
+            return d.getMonth() === thisMonth && d.getFullYear() === thisYear
+          }).reduce((s, o) => {
+            const extra = customOrderExtras[o.id]
+            const amount = extra?.quote_amount ? parseFloat(extra.quote_amount.replace(/[^0-9.]/g, '')) : 0
+            return s + (isNaN(amount) ? 0 : Math.round(amount * 100))
+          }, 0)
+
           const revenueLastMonth = paidOrders.filter((o) => {
             const d = new Date(o.created_at)
             return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear
-          }).reduce((s, o) => s + o.total, 0)
-          const avgOrderValue = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0
+          }).reduce((s, o) => s + o.total, 0) + paidCustomOrders.filter((o) => {
+            const d = new Date(o.created_at)
+            return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear
+          }).reduce((s, o) => {
+            const extra = customOrderExtras[o.id]
+            const amount = extra?.quote_amount ? parseFloat(extra.quote_amount.replace(/[^0-9.]/g, '')) : 0
+            return s + (isNaN(amount) ? 0 : Math.round(amount * 100))
+          }, 0)
+
+          const avgOrderValue = (paidOrders.length + paidCustomOrders.length) > 0
+            ? totalRevenue / (paidOrders.length + paidCustomOrders.length) : 0
 
           // Total product value sold (item prices × qty, no tax / gift wrap)
           const itemsValueAllTime = paidOrders.reduce((s, o) =>
@@ -1642,12 +1669,12 @@ export default function AdminDashboard() {
               {/* ── Revenue cards ── */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
                 {[
-                  { label: 'Total Revenue', value: fmt(totalRevenue), sub: 'all orders · incl. tax' },
+                  { label: 'Total Revenue', value: fmt(totalRevenue), sub: `shop + custom orders · incl. tax` },
                   { label: 'Revenue This Month', value: fmt(revenueThisMonth), sub: now.toLocaleString('default', { month: 'long', year: 'numeric' }) },
                   { label: 'Revenue Last Month', value: fmt(revenueLastMonth), sub: new Date(lastMonthYear, lastMonth).toLocaleString('default', { month: 'long', year: 'numeric' }) },
                   { label: 'Products Sold (All Time)', value: fmt(itemsValueAllTime), sub: 'catalog price · excl. tax' },
                   { label: 'Products Sold (This Month)', value: fmt(itemsValueThisMonth), sub: now.toLocaleString('default', { month: 'long', year: 'numeric' }) },
-                  { label: 'Total Orders', value: String(orders.length), sub: `avg ${fmt(avgOrderValue)} / order` },
+                  { label: 'Total Orders', value: String(orders.length + paidCustomOrders.length), sub: `avg ${fmt(avgOrderValue)} / order · incl. ${paidCustomOrders.length} custom` },
                 ].map(({ label, value, sub }) => (
                   <div key={label} style={{ ...cardStyle, background: 'var(--blush)' }}>
                     <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 6 }}>{label}</div>
