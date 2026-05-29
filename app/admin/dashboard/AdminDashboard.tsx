@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Order, Product, InstagramTile, Review, CustomOrderRequest } from '@/lib/types'
 import { type SiteContent, DEFAULT_CONTENT } from '@/lib/content'
@@ -174,6 +174,7 @@ const CUSTOM_ORDER_STATUSES: { value: CustomOrderRequest['status']; label: strin
   { value: 'new', label: 'New', color: '#e8b86d' },
   { value: 'quoted', label: 'Quoted', color: '#9b59b6' },
   { value: 'accepted', label: 'Accepted', color: '#c4907a' },
+  { value: 'paid', label: 'Paid', color: '#16a34a' },
   { value: 'in_progress', label: 'In Progress', color: '#5b8dee' },
   { value: 'shipped', label: 'Shipped', color: '#2980b9' },
   { value: 'delivered', label: 'Delivered', color: '#27ae60' },
@@ -193,6 +194,56 @@ function CustomOrderCard({
   const [quote, setQuote] = useState(extra.quote_amount)
   const [estimatedTime, setEstimatedTime] = useState(extra.estimated_time ?? '')
   const [trackingNumber, setTrackingNumber] = useState(extra.tracking_number ?? '')
+  const [paymentType, setPaymentType] = useState<'full' | 'deposit'>(extra.payment_type ?? 'full')
+  const [paymentLink, setPaymentLink] = useState(extra.payment_link ?? '')
+  const [sendingPaymentLink, setSendingPaymentLink] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  async function handleSendPaymentLink() {
+    if (!quote) { window.dispatchEvent(new CustomEvent('show-toast', { detail: 'Enter a quote amount first.' })); return }
+    setSendingPaymentLink(true)
+    try {
+      const res = await fetch('/api/admin/custom-orders/payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.id, quote_amount: quote.replace(/[^0-9.]/g, ''), payment_type: paymentType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
+      setPaymentLink(data.url)
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '💳 Payment link sent to customer!' }))
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: `Error: ${e instanceof Error ? e.message : 'Something went wrong'}` }))
+    } finally {
+      setSendingPaymentLink(false)
+    }
+  }
+
+  async function handleResendEmail() {
+    if (!paymentLink || !quote) return
+    setSendingPaymentLink(true)
+    try {
+      const res = await fetch('/api/admin/custom-orders/payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: order.id, quote_amount: quote.replace(/[^0-9.]/g, ''), payment_type: paymentType }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed')
+      setPaymentLink(data.url)
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: '💌 Payment email resent!' }))
+    } catch (e) {
+      window.dispatchEvent(new CustomEvent('show-toast', { detail: `Error: ${e instanceof Error ? e.message : 'Something went wrong'}` }))
+    } finally {
+      setSendingPaymentLink(false)
+    }
+  }
+
+  function copyLink() {
+    navigator.clipboard.writeText(paymentLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   const statusInfo = CUSTOM_ORDER_STATUSES.find((s) => s.value === status)
 
   return (
@@ -281,6 +332,72 @@ function CustomOrderCard({
         {status === 'shipped' && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#2980b922', color: '#2980b9' }}>💌 Shipping email will send on Save</span>}
         {status === 'delivered' && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: '#27ae6022', color: '#27ae60' }}>💌 Delivery + review email will send on Save</span>}
       </div>
+
+      {/* Payment link section — shown when accepted or quoted */}
+      {(status === 'accepted' || status === 'quoted') && (
+        <div style={{ marginTop: 16, padding: '16px 18px', background: 'white', borderRadius: 12, border: '1.5px solid var(--warm-sand)' }}>
+          <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: 'var(--text-mid)' }}>💳 Send Payment Link</div>
+
+          {/* Full / Deposit toggle */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            {(['full', 'deposit'] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setPaymentType(t)}
+                style={{
+                  padding: '6px 16px', borderRadius: 20, fontSize: 12, cursor: 'pointer', border: '1.5px solid var(--accent)',
+                  background: paymentType === t ? 'var(--accent)' : 'transparent',
+                  color: paymentType === t ? 'white' : 'var(--accent)',
+                  fontWeight: paymentType === t ? 600 : 400,
+                }}
+              >
+                {t === 'full' ? 'Full Amount' : '50% Deposit'}
+              </button>
+            ))}
+            {quote && (
+              <span style={{ fontSize: 12, color: 'var(--text-light)', alignSelf: 'center', marginLeft: 4 }}>
+                = ${paymentType === 'deposit'
+                  ? (parseFloat(quote.replace(/[^0-9.]/g, '')) / 2).toFixed(2)
+                  : parseFloat(quote.replace(/[^0-9.]/g, '')).toFixed(2)}
+              </span>
+            )}
+          </div>
+
+          {/* Generate button or existing link */}
+          {!paymentLink ? (
+            <button
+              className="btn-primary"
+              disabled={sendingPaymentLink || !quote}
+              onClick={handleSendPaymentLink}
+              style={{ fontSize: 13 }}
+            >
+              {sendingPaymentLink ? 'Generating…' : 'Generate & Email Payment Link'}
+            </button>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                <input
+                  type="text"
+                  readOnly
+                  value={paymentLink}
+                  style={{ flex: 1, fontSize: 11, color: 'var(--text-mid)', background: 'var(--cream)', borderRadius: 8, padding: '6px 10px', border: '1.5px solid var(--warm-sand)' }}
+                />
+                <button className="btn-outline btn-outline-sm" onClick={copyLink} style={{ flexShrink: 0 }}>
+                  {copied ? '✓ Copied' : 'Copy'}
+                </button>
+              </div>
+              <button
+                className="btn-outline btn-outline-sm"
+                disabled={sendingPaymentLink}
+                onClick={handleResendEmail}
+                style={{ fontSize: 12 }}
+              >
+                {sendingPaymentLink ? 'Sending…' : '💌 Resend Email'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -610,9 +727,8 @@ export default function AdminDashboard() {
                       const isExpanded = expandedOrder === order.id
                       const addr = order.shipping_address ?? {}
                       return (
-                        <>
+                        <React.Fragment key={order.id}>
                           <tr
-                            key={order.id}
                             style={{ cursor: 'pointer', background: isExpanded ? 'var(--cream)' : undefined }}
                             onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
                           >
@@ -752,7 +868,7 @@ export default function AdminDashboard() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       )
                     })}
                   </tbody>
@@ -1027,7 +1143,7 @@ export default function AdminDashboard() {
             {reviews.length === 0 ? (
               <p style={{ color: 'var(--text-light)', fontSize: 14 }}>No reviews yet. Add one above.</p>
             ) : (
-              reviews.map((r) => (
+              <>{reviews.map((r) => (
                 <div key={r.id} style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '14px 0', borderBottom: '1px solid var(--warm-sand)' }}>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--accent)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 16, flexShrink: 0 }}>
                     {r.avatar_letter}
@@ -1042,7 +1158,7 @@ export default function AdminDashboard() {
                     <button className="btn-outline btn-outline-sm" style={{ color: '#c0392b', borderColor: '#c0392b' }} onClick={() => deleteReview(r.id)}>Delete</button>
                   </div>
                 </div>
-              ))
+              ))}</>
             )}
           </div>
         )}

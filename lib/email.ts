@@ -530,3 +530,145 @@ export async function sendCustomOrderDelivered(order: {
   })
   if (error) console.error('Failed to send custom order delivered email:', error)
 }
+
+// ─── Custom Order: Payment Request ───────────────────────────────────────────
+export async function sendCustomOrderPaymentRequest(order: {
+  customer_email: string
+  customer_name: string
+  piece_type: string
+  amount: number // in cents
+  payment_type: 'full' | 'deposit'
+  payment_link: string
+}): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const formattedAmount = `$${(order.amount / 100).toFixed(2)}`
+  const label = order.payment_type === 'deposit' ? '50% deposit' : 'full payment'
+
+  const body = `
+    <p style="font-size:14px;color:${C.textMid};margin:0 0 20px;line-height:1.6;">
+      Hi ${order.customer_name || 'there'}! Great news — I've reviewed your custom <strong>${order.piece_type}</strong>
+      request and I'm ready to make it for you 🌸
+    </p>
+
+    <div style="background:${C.blush};border-radius:12px;padding:24px;margin-bottom:24px;border:1.5px solid ${C.border};text-align:center;">
+      <p style="margin:0 0 6px;font-size:13px;color:${C.textLight};text-transform:uppercase;letter-spacing:0.1em;">Amount due (${label})</p>
+      <p style="margin:0;font-size:36px;font-family:Georgia,serif;color:${C.accentDark};font-weight:300;">${formattedAmount}</p>
+    </div>
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <a href="${order.payment_link}" style="display:inline-block;background:${C.accent};color:#fff;text-decoration:none;padding:14px 36px;border-radius:10px;font-size:15px;letter-spacing:0.04em;">
+        Pay Now 💳
+      </a>
+    </div>
+
+    <div style="padding:16px 20px;background:${C.blush};border-radius:10px;border-left:3px solid ${C.accent};">
+      <p style="margin:0;font-size:13px;color:${C.textMid};line-height:1.7;">
+        ${order.payment_type === 'deposit'
+          ? `This is a 50% deposit to confirm your order. The remaining balance will be due before shipping.`
+          : `This covers the full cost of your piece. I'll get started as soon as payment is received!`}
+      </p>
+    </div>
+
+    <p style="font-size:12px;color:${C.textLight};margin-top:20px;line-height:1.6;">
+      If you have any questions, just reply to this email. I'll be in touch within 2 business days after payment. 🌷
+    </p>
+  `
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: order.customer_email,
+    subject: `Your custom piece is ready to be confirmed 🌸`,
+    html: layout(body),
+  })
+  if (error) console.error('Failed to send custom order payment request email:', error)
+}
+
+// ─── Custom Order: Payment Confirmation (to customer) ────────────────────────
+export async function sendCustomOrderPaymentConfirmation(order: {
+  customer_email: string
+  customer_name: string
+  piece_type: string
+  amount_paid: number // in cents
+  payment_type: 'full' | 'deposit'
+}): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const formattedAmount = `$${(order.amount_paid / 100).toFixed(2)}`
+  const label = order.payment_type === 'deposit' ? '50% deposit' : 'full payment'
+
+  const body = `
+    <p style="font-size:14px;color:${C.textMid};margin:0 0 20px;line-height:1.6;">
+      Hi ${order.customer_name || 'there'}! I've received your ${label} of <strong>${formattedAmount}</strong>
+      for your custom <strong>${order.piece_type}</strong> 🧶
+    </p>
+
+    <div style="background:${C.blush};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1.5px solid ${C.border};">
+      <p style="margin:0 0 8px;font-size:14px;color:${C.accentDark};font-weight:500;">What happens next?</p>
+      <p style="margin:0;font-size:13px;color:${C.textMid};line-height:1.8;">
+        I'll reach out soon with updates as I start working on your piece.
+        You'll get another email when it's in progress, when it ships, and when it's delivered. 💕
+      </p>
+    </div>
+
+    <div style="padding:16px 20px;background:${C.blush};border-radius:10px;border-left:3px solid ${C.accent};">
+      <p style="margin:0;font-size:13px;color:${C.textMid};line-height:1.7;">
+        Questions? Just reply to this email anytime —
+        <a href="https://madebyadya.com" style="color:${C.accent};text-decoration:none;">madebyadya.com</a>
+      </p>
+    </div>
+  `
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: order.customer_email,
+    subject: `Payment received — I'll get started! 🧶`,
+    html: layout(body),
+  })
+  if (error) console.error('Failed to send custom order payment confirmation email:', error)
+}
+
+// ─── Custom Order: Admin Notification (payment received) ─────────────────────
+export async function sendAdminCustomOrderPaid(order: {
+  customer_name: string
+  customer_email: string
+  piece_type: string
+  amount_paid: number // in cents
+  order_id: string
+}): Promise<void> {
+  const resend = getResend()
+  if (!resend) return
+
+  const adminEmail = process.env.ADMIN_EMAIL ?? 'adyakadam@berkeley.edu'
+  const formattedAmount = `$${(order.amount_paid / 100).toFixed(2)}`
+
+  const body = `
+    <p style="font-size:14px;color:${C.textMid};margin:0 0 20px;line-height:1.6;">
+      A customer just paid for their custom order! 🎉
+    </p>
+
+    <div style="background:${C.blush};border-radius:12px;padding:20px 24px;margin-bottom:24px;border:1.5px solid ${C.border};">
+      <table cellpadding="0" cellspacing="0" width="100%">
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:8px;">Customer</td><td style="font-size:13px;color:${C.text};font-weight:500;">${order.customer_name} (${order.customer_email})</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:8px;">Piece</td><td style="font-size:13px;color:${C.text};">${order.piece_type}</td></tr>
+        <tr><td style="font-size:13px;color:${C.textLight};padding-bottom:8px;">Amount Paid</td><td style="font-size:15px;color:${C.accentDark};font-weight:500;">${formattedAmount}</td></tr>
+      </table>
+    </div>
+
+    <div style="text-align:center;">
+      <a href="${BASE_URL}/admin" style="display:inline-block;background:${C.accent};color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-size:14px;">
+        View in Admin →
+      </a>
+    </div>
+  `
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to: adminEmail,
+    subject: `💸 Custom order payment received — ${order.customer_name}`,
+    html: layout(body),
+  })
+  if (error) console.error('Failed to send admin custom order paid email:', error)
+}

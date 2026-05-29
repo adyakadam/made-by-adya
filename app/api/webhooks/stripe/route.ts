@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin, decrementColorStock } from '@/lib/supabase'
-import { sendOrderConfirmation } from '@/lib/email'
+import { sendOrderConfirmation, sendCustomOrderPaymentConfirmation, sendAdminCustomOrderPaid } from '@/lib/email'
 import type Stripe from 'stripe'
 
 export async function POST(req: NextRequest) {
@@ -18,10 +18,52 @@ export async function POST(req: NextRequest) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    await handleCheckoutComplete(session)
+    if (session.metadata?.type === 'custom_order') {
+      await handleCustomOrderPayment(session)
+    } else {
+      await handleCheckoutComplete(session)
+    }
   }
 
   return new Response('OK', { status: 200 })
+}
+
+async function handleCustomOrderPayment(session: Stripe.Checkout.Session) {
+  const db = supabaseAdmin()
+  if (!db) { console.error('supabaseAdmin not configured'); return }
+
+  const meta = session.metadata ?? {}
+  const customOrderId = meta.custom_order_id
+  const paymentType = (meta.payment_type ?? 'full') as 'full' | 'deposit'
+  const amountPaid = session.amount_total ?? 0
+
+  if (!customOrderId) { console.error('No custom_order_id in metadata'); return }
+
+  // Update custom order status to 'paid'
+  const { error } = await db.from('custom_orders').update({ status: 'paid' }).eq('id', customOrderId)
+  if (error) { console.error('Failed to update custom order status:', error); return }
+
+  // Fetch order details for emails
+  const { data: orderData } = await db.from('custom_orders').select('*').eq('id', customOrderId).single()
+  if (!orderData) return
+
+  // Email customer confirmation
+  sendCustomOrderPaymentConfirmation({
+    customer_email: orderData.email,
+    customer_name: orderData.name,
+    piece_type: orderData.piece_type,
+    amount_paid: amountPaid,
+    payment_type: paymentType,
+  }).catch((e) => console.error('Custom order payment confirmation email error:', e))
+
+  // Email admin notification
+  sendAdminCustomOrderPaid({
+    customer_name: orderData.name,
+    customer_email: orderData.email,
+    piece_type: orderData.piece_type,
+    amount_paid: amountPaid,
+    order_id: customOrderId,
+  }).catch((e) => console.error('Admin custom order paid email error:', e))
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {

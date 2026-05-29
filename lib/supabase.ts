@@ -351,7 +351,7 @@ export async function addNewsletterSubscriber(email: string): Promise<void> {
   await db.from('settings').upsert({ key: 'newsletter_subscribers', value: [...existing, { email, created_at: new Date().toISOString() }] })
 }
 
-export interface CustomOrderExtra { admin_notes: string; quote_amount: string; reference_images?: string[]; estimated_time?: string; tracking_number?: string }
+export interface CustomOrderExtra { admin_notes: string; quote_amount: string; reference_images?: string[]; estimated_time?: string; tracking_number?: string; payment_link?: string; payment_type?: 'full' | 'deposit' }
 
 export async function getCustomOrderExtras(): Promise<Record<string, CustomOrderExtra>> {
   try {
